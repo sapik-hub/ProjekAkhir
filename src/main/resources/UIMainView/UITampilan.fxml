@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<StackPane fx:id="rootPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="ProjekAstra.Controller.MainView.Tampilan"
+           styleClass="bg-hero"
+           stylesheets="@../css/villa-theme.css">
+
+    <VBox alignment="CENTER" spacing="40">
+        <padding>
+            <Insets top="60" bottom="60" left="60" right="60"/>
+        </padding>
+
+        <VBox alignment="CENTER" spacing="10">
+            <Label text="🏠 VillaNesia 🌸" styleClass="hero-title-text">
+                <font>
+                    <Font name="System Bold" size="42"/>
+                </font>
+            </Label>
+            <Label text="Pilih peran Anda untuk melanjutkan 🏖️" styleClass="hero-subtitle-text">
+                <font>
+                    <Font size="16"/>
+                </font>
+            </Label>
+        </VBox>
+
+        <HBox alignment="CENTER" spacing="30">
+
+            <!-- Karyawan -->
+            <VBox fx:id="cardKaryawan" alignment="CENTER" spacing="12" prefWidth="250" prefHeight="200"
+                  styleClass="hero-card"
+                  onMouseClicked="#handleKaryawan">
+                <Label text="🛠" styleClass="hero-icon"/>
+                <Label text="Karyawan" textFill="#1565C0">
+                    <font>
+                        <Font name="System Bold" size="20"/>
+                    </font>
+                </Label>
+                <Label text="Kelola seluruh sistem dan data" textFill="#616161" textAlignment="CENTER" wrapText="true">
+                    <font>
+                        <Font size="13"/>
+                    </font>
+                </Label>
+            </VBox>
+
+            <!-- Penyewa -->
+            <VBox fx:id="cardPenyewa" alignment="CENTER" spacing="12" prefWidth="250" prefHeight="200"
+                  styleClass="hero-card"
+                  onMouseClicked="#handlePenyewa">
+                <Label text="🏖️" styleClass="hero-icon"/>
+                <Label text="Penyewa" textFill="#1565C0">
+                    <font>
+                        <Font name="System Bold" size="20"/>
+                    </font>
+                </Label>
+                <Label text="Cari dan sewa vila impian Anda" textFill="#616161" textAlignment="CENTER" wrapText="true">
+                    <font>
+                        <Font size="13"/>
+                    </font>
+                </Label>
+            </VBox>
+
+            <!-- Pemilik -->
+            <VBox fx:id="cardPemilik" alignment="CENTER" spacing="12" prefWidth="250" prefHeight="200"
+                  styleClass="hero-card"
+                  onMouseClicked="#handlePemilik">
+                <Label text="🏠" styleClass="hero-icon"/>
+                <Label text="Pemilik" textFill="#1565C0">
+                    <font>
+                        <Font name="System Bold" size="20"/>
+                    </font>
+                </Label>
+                <Label text="Kelola properti vila Anda" textFill="#616161" textAlignment="CENTER" wrapText="true">
+                    <font>
+                        <Font size="13"/>
+                    </font>
+                </Label>
+            </VBox>
+
+        </HBox>
+
+        <Label text="🌺 © 2026 VillaNesia — Penyewaan Vila Terpercaya 🌺" styleClass="footer-text">
+            <font>
+                <Font size="11"/>
+            </font>
+        </Label>
+
+    </VBox>
+
+</StackPane>

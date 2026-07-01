@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<StackPane xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="ProjekAstra.Controller.Login.LoginPemilik"
+           styleClass="bg-hero"
+           stylesheets="@../css/villa-theme.css">
+
+    <VBox alignment="CENTER" spacing="20" maxWidth="420">
+
+        <VBox alignment="CENTER"
+              spacing="20"
+              styleClass="card"
+              prefWidth="400">
+
+            <padding>
+                <Insets top="35" bottom="35" left="35" right="35"/>
+            </padding>
+
+            <Label text="🏠 VillaNesia 🌸" styleClass="brand-title">
+                <font>
+                    <Font name="System Bold" size="28"/>
+                </font>
+            </Label>
+
+            <Label text="Login Pemilik Villa"
+                   styleClass="brand-subtitle"/>
+
+            <VBox spacing="15">
+
+                <TextField fx:id="loginUsername"
+                           promptText="Username"
+                           styleClass="input-field"/>
+
+                <PasswordField fx:id="loginPassword"
+                               promptText="Password"
+                               styleClass="input-field"/>
+
+                <HBox spacing="10">
+
+                    <Button text="← Kembali"
+                            prefWidth="110"
+                            onAction="#handleKembali"
+                            styleClass="btn-outline"/>
+
+                    <Button text="Masuk"
+                            onAction="#handleLogin"
+                            HBox.hgrow="ALWAYS"
+                            maxWidth="Infinity"
+                            styleClass="btn-primary"/>
+
+                </HBox>
+
+            </VBox>
+
+        </VBox>
+
+    </VBox>
+
+</StackPane>

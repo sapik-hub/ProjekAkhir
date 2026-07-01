@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<StackPane xmlns="http://javafx.com/javafx/17.0.12"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="ProjekAstra.Controller.Login.LoginKaryawan"
+           styleClass="bg-hero"
+           stylesheets="@../css/villa-theme.css">
+
+    <VBox alignment="CENTER" maxWidth="420" spacing="20">
+
+        <VBox alignment="CENTER"
+              prefWidth="400"
+              spacing="20"
+              styleClass="card">
+
+            <padding>
+                <Insets top="30" bottom="30" left="35" right="35"/>
+            </padding>
+
+            <Label text="🏠 VillaNesia 🌸" styleClass="brand-title">
+                <font>
+                    <Font name="System Bold" size="28"/>
+                </font>
+            </Label>
+
+            <Label text="Akun Karyawan" styleClass="brand-subtitle"/>
+
+            <!-- Toggle -->
+            <HBox prefHeight="40"
+                  spacing="0"
+                  styleClass="tab-bar">
+
+                <Button fx:id="tabLogin"
+                        text="Masuk"
+                        onAction="#showLogin"
+                        prefWidth="190"
+                        styleClass="tab-btn-active"/>
+
+                <Button fx:id="tabRegister"
+                        text="Daftar"
+                        onAction="#showRegister"
+                        prefWidth="190"
+                        styleClass="tab-btn-inactive"/>
+
+            </HBox>
+
+            <!-- LOGIN -->
+            <VBox fx:id="paneLogin" spacing="12">
+
+                <TextField fx:id="loginUsername"
+                           promptText="Username"
+                           styleClass="input-field"/>
+
+                <PasswordField fx:id="loginPassword"
+                               promptText="Password"
+                               styleClass="input-field"/>
+
+                <HBox spacing="10">
+
+                    <Button text="← Kembali"
+                            prefWidth="100"
+                            onAction="#handleKembali"
+                            styleClass="btn-outline"/>
+
+                    <Button text="Masuk 🌺"
+                            onAction="#handleLogin"
+                            HBox.hgrow="ALWAYS"
+                            maxWidth="Infinity"
+                            styleClass="btn-primary"/>
+
+                </HBox>
+
+            </VBox>
+
+            <!-- REGISTER -->
+            <VBox fx:id="paneRegister"
+                  managed="false"
+                  visible="false"
+                  spacing="12">
+
+                <TextField fx:id="regNama"
+                           promptText="Nama Lengkap"
+                           styleClass="input-field"/>
+
+                <TextField fx:id="regNoTelp"
+                           promptText="No. Telp"
+                           styleClass="input-field"/>
+
+                <TextField fx:id="regAlamat"
+                           promptText="Alamat"
+                           styleClass="input-field"/>
+
+                <!-- Tetap regUmur agar controller tidak error -->
+                <TextField fx:id="regUmur"
+                           promptText="NIK KTP"
+                           styleClass="input-field"/>
+
+                <DatePicker fx:id="regTglMasuk"
+                            promptText="Tanggal Masuk"
+                            prefWidth="330"
+                            styleClass="input-field"/>
+
+                <ComboBox fx:id="regStatus"
+                          promptText="Status"
+                          prefWidth="330"
+                          styleClass="input-field"/>
+
+                <TextField fx:id="regUsername"
+                           promptText="Username"
+                           styleClass="input-field"/>
+
+                <PasswordField fx:id="regPassword"
+                               promptText="Password"
+                               styleClass="input-field"/>
+
+                <Button text="Daftar 🏖️"
+                        onAction="#handleRegister"
+                        prefWidth="330"
+                        styleClass="btn-primary"/>
+
+            </VBox>
+
+        </VBox>
+
+    </VBox>
+
+</StackPane>

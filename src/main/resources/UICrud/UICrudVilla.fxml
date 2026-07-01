@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ProjekAstra.Controller.Master.CrudVilla"
+            styleClass="bg-soft"
+            stylesheets="@../css/villa-theme.css">
+
+    <center>
+        <HBox spacing="15">
+            <padding><Insets top="0" bottom="15" left="0" right="0"/></padding>
+
+            <VBox spacing="12" prefWidth="280" styleClass="card">
+                <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+                <Label text="🏠 Form Villa" styleClass="brand-title">
+                    <font><Font name="System Bold" size="15"/></font>
+                </Label>
+
+                <TextField fx:id="txtId" promptText="ID Villa" editable="false" styleClass="input-field"/>
+                <ComboBox fx:id="cbPemilik" promptText="Pilih Pemilik" maxWidth="Infinity" styleClass="input-field"/>
+                <ComboBox fx:id="cbKategori" promptText="Pilih Kategori" maxWidth="Infinity" styleClass="input-field"/>
+                <TextField fx:id="txtNamaVilla" promptText="Nama Villa" styleClass="input-field"/>
+                <TextField fx:id="txtKapasitas" promptText="Kapasitas (orang)" styleClass="input-field"/>
+                <TextField fx:id="txtHarga" promptText="Harga per malam" styleClass="input-field"/>
+                <TextField fx:id="txtAlamat" promptText="Alamat Villa" styleClass="input-field"/>
+                <ComboBox fx:id="cbStatus" promptText="Status" maxWidth="Infinity" styleClass="input-field"/>
+
+                <Region VBox.vgrow="ALWAYS"/>
+                <TextField fx:id="txtCari" promptText="🔍 Cari villa..." styleClass="input-field"/>
+            </VBox>
+
+            <VBox HBox.hgrow="ALWAYS" styleClass="card">
+                <padding><Insets top="15" bottom="15" left="15" right="15"/></padding>
+
+                <TableView fx:id="tableVilla" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colId" text="ID Villa" prefWidth="90"/>
+                        <TableColumn fx:id="colPemilik" text="Pemilik" prefWidth="130"/>
+                        <TableColumn fx:id="colKategori" text="Kategori" prefWidth="110"/>
+                        <TableColumn fx:id="colNamaVilla" text="Nama Villa" prefWidth="150"/>
+                        <TableColumn fx:id="colKapasitas" text="Kapasitas" prefWidth="80"/>
+                        <TableColumn fx:id="colHarga" text="Harga" prefWidth="100"/>
+                        <TableColumn fx:id="colAlamat" text="Alamat" prefWidth="160"/>
+                        <TableColumn fx:id="colStatus" text="Status" prefWidth="90"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </HBox>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="card">
+            <padding><Insets top="15" bottom="15" left="20" right="20"/></padding>
+
+            <Button fx:id="btnSimpan" text="Simpan" onAction="#handleSimpan"
+                    styleClass="btn-primary" prefWidth="100"/>
+            <Button fx:id="btnUbah" text="Ubah" onAction="#handleUbah"
+                    styleClass="btn-warning" prefWidth="100"/>
+            <Button fx:id="btnHapus" text="Hapus" onAction="#handleHapus"
+                    styleClass="btn-danger" prefWidth="100"/>
+            <Button text="Reset" onAction="#handleReset"
+                    styleClass="btn-neutral" prefWidth="100"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

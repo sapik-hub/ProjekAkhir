@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ProjekAstra.Controller.Dashboard.DashboardPenyewa"
+            styleClass="bg-soft"
+            stylesheets="@../css/villa-theme.css">
+
+    <left>
+        <VBox prefWidth="220" spacing="5" styleClass="sidebar">
+            <padding><Insets top="20" bottom="20" left="15" right="15"/></padding>
+
+            <Label text="🏠 VillaStay" styleClass="sidebar-title">
+                <font><Font name="System Bold" size="22"/></font>
+            </Label>
+            <Label text="Villa Rental Management 🌸" styleClass="sidebar-subtitle" style="-fx-font-size: 11px;"/>
+
+            <Region prefHeight="25"/>
+
+            <Button fx:id="btnPenyewa" text="👤  Penyewa" onAction="#handlePenyewa"
+                    prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
+                    styleClass="sidebar-menu-btn-active"/>
+        </VBox>
+    </left>
+
+    <top>
+        <HBox alignment="CENTER_LEFT" prefHeight="70" styleClass="topbar">
+            <padding><Insets left="25" right="25"/></padding>
+
+            <Label fx:id="lblJudul" text="Dashboard" styleClass="page-title">
+                <font><Font name="System Bold" size="18"/></font>
+            </Label>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button text="Keluar" onAction="#handleLogout" prefHeight="35" prefWidth="90"
+                    styleClass="btn-danger"/>
+        </HBox>
+    </top>
+
+    <center>
+        <StackPane fx:id="contentPane">
+            <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+            <Label text="🌺 Selamat datang di Dashboard VillaStay" styleClass="welcome-text" style="-fx-font-size: 14px;"/>
+        </StackPane>
+    </center>
+
+</BorderPane>

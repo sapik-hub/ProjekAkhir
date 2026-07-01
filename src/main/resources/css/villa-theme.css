@@ -1,0 +1,214 @@
+/* ============================================================
+   VillaNesia — Tema Pastel Biru & Pink 🏠🌸
+   Stylesheet JavaFX untuk seluruh halaman (Login, Dashboard, CRUD)
+   ============================================================ */
+
+/* ---------- BACKGROUND ---------- */
+
+/* Background utama untuk halaman Login & Main Menu (gradasi biru -> pink pastel) */
+.bg-hero {
+    -fx-background-color: linear-gradient(to bottom right, #AEE1F5 0%, #F3C9DE 55%, #F7A8C9 100%);
+}
+
+/* Background lembut untuk area konten Dashboard */
+.bg-soft {
+    -fx-background-color: linear-gradient(to bottom right, #F2FAFD 0%, #FDF1F6 100%);
+}
+
+/* ---------- CARD / PANEL ---------- */
+
+.card {
+    -fx-background-color: white;
+    -fx-background-radius: 18;
+    -fx-effect: dropshadow(gaussian, rgba(142,197,222,0.45), 18, 0, 0, 6);
+}
+
+.card-flat {
+    -fx-background-color: white;
+    -fx-background-radius: 14;
+}
+
+/* ---------- BRAND / JUDUL ---------- */
+
+.brand-title {
+    -fx-text-fill: #4A8FB5;
+    -fx-font-weight: bold;
+}
+
+.brand-subtitle {
+    -fx-text-fill: #A3AEBA;
+}
+
+/* ---------- TAB TOGGLE (Masuk / Daftar) ---------- */
+
+.tab-bar {
+    -fx-background-color: #FDEEF4;
+    -fx-background-radius: 10;
+}
+
+.tab-btn-active {
+    -fx-background-color: linear-gradient(to right, #8ECAE6, #F7A8CB);
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+    -fx-font-weight: bold;
+}
+
+.tab-btn-inactive {
+    -fx-background-color: transparent;
+    -fx-text-fill: #A3AEBA;
+    -fx-background-radius: 8;
+    -fx-font-weight: bold;
+}
+
+/* ---------- INPUT FIELD ---------- */
+
+.input-field {
+    -fx-background-color: #F7FBFD;
+    -fx-background-radius: 10;
+    -fx-border-color: #E1EEF5;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 8 12 8 12;
+}
+
+.input-field:focused {
+    -fx-border-color: #8ECAE6;
+    -fx-background-color: white;
+}
+
+/* ---------- BUTTON ---------- */
+
+.btn-primary {
+    -fx-background-color: linear-gradient(to right, #7FC1E3, #F191B8);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+}
+.btn-primary:hover {
+    -fx-background-color: linear-gradient(to right, #6FB4D8, #EC7FAC);
+}
+
+.btn-outline {
+    -fx-background-color: #EAF6FB;
+    -fx-text-fill: #4A8FB5;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+}
+.btn-outline:hover {
+    -fx-background-color: #DCEFF7;
+}
+
+.btn-danger {
+    -fx-background-color: #F76C8A;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+.btn-danger:hover {
+    -fx-background-color: #EF5580;
+}
+
+.btn-warning {
+    -fx-background-color: #FFC98B;
+    -fx-text-fill: #7A4A00;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+.btn-warning:hover {
+    -fx-background-color: #FFBB6E;
+}
+
+.btn-neutral {
+    -fx-background-color: #EEF3F7;
+    -fx-text-fill: #5B6B7A;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+.btn-neutral:hover {
+    -fx-background-color: #E2EAF0;
+}
+
+/* ---------- SIDEBAR (Dashboard) ---------- */
+
+.sidebar {
+    -fx-background-color: linear-gradient(to bottom, #7FC1E3, #F191B8);
+}
+
+.sidebar-title {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.sidebar-subtitle {
+    -fx-text-fill: #FDEEF4;
+}
+
+.sidebar-menu-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+.sidebar-menu-btn:hover {
+    -fx-background-color: rgba(255,255,255,0.20);
+}
+
+.sidebar-menu-btn-active {
+    -fx-background-color: white;
+    -fx-text-fill: #E86FA0;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+}
+
+/* ---------- TOPBAR (Dashboard) ---------- */
+
+.topbar {
+    -fx-background-color: white;
+    -fx-border-color: #F6E3EC;
+    -fx-border-width: 0 0 1 0;
+}
+
+.page-title {
+    -fx-text-fill: #4A5568;
+    -fx-font-weight: bold;
+}
+
+.welcome-text {
+    -fx-text-fill: #8B98A6;
+}
+
+/* ---------- HERO CARD (Main Menu pilih peran) ---------- */
+
+.hero-card {
+    -fx-background-color: white;
+    -fx-background-radius: 18;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(74,63,90,0.18), 16, 0, 0, 8);
+}
+.hero-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(74,63,90,0.28), 22, 0, 0, 12);
+    -fx-translate-y: -3;
+}
+
+.hero-title-text {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.hero-subtitle-text {
+    -fx-text-fill: #FFF0F6;
+}
+
+.hero-icon {
+    -fx-font-size: 36px;
+}
+
+.footer-text {
+    -fx-text-fill: #FCE4EC;
+}

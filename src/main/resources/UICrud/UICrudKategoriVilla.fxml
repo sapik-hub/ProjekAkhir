@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ProjekAstra.Controller.Master.CrudKategoriVilla"
+            styleClass="bg-soft"
+            stylesheets="@../css/villa-theme.css">
+
+    <center>
+        <HBox spacing="15">
+            <padding><Insets top="0" bottom="15" left="0" right="0"/></padding>
+
+            <VBox spacing="12" prefWidth="280" styleClass="card">
+                <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+                <Label text="🌸 Form Kategori Villa" styleClass="brand-title">
+                    <font><Font name="System Bold" size="15"/></font>
+                </Label>
+
+                <TextField fx:id="txtId" promptText="ID Kategori" editable="false" styleClass="input-field"/>
+                <TextField fx:id="txtNamaKategori" promptText="Nama Kategori" styleClass="input-field"/>
+                <TextArea fx:id="txtDeskripsi" promptText="Deskripsi" prefRowCount="4" wrapText="true" styleClass="input-field"/>
+
+                <Region VBox.vgrow="ALWAYS"/>
+                <TextField fx:id="txtCari" promptText="🔍 Cari kategori..." styleClass="input-field"/>
+            </VBox>
+
+            <VBox HBox.hgrow="ALWAYS" styleClass="card">
+                <padding><Insets top="15" bottom="15" left="15" right="15"/></padding>
+
+                <TableView fx:id="tableKategori" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colId" text="ID Kategori" prefWidth="100"/>
+                        <TableColumn fx:id="colNamaKategori" text="Nama Kategori" prefWidth="180"/>
+                        <TableColumn fx:id="colDeskripsi" text="Deskripsi" prefWidth="300"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </HBox>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="card">
+            <padding><Insets top="15" bottom="15" left="20" right="20"/></padding>
+
+            <Button fx:id="btnSimpan" text="Simpan" onAction="#handleSimpan"
+                    styleClass="btn-primary" prefWidth="100"/>
+            <Button fx:id="btnUbah" text="Ubah" onAction="#handleUbah"
+                    styleClass="btn-warning" prefWidth="100"/>
+            <Button fx:id="btnHapus" text="Hapus" onAction="#handleHapus"
+                    styleClass="btn-danger" prefWidth="100"/>
+            <Button text="Reset" onAction="#handleReset"
+                    styleClass="btn-neutral" prefWidth="100"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>
