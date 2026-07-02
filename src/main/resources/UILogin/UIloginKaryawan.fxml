@@ -95,20 +95,14 @@
                            promptText="Alamat"
                            styleClass="input-field"/>
 
-                <!-- Tetap regUmur agar controller tidak error -->
                 <TextField fx:id="regUmur"
-                           promptText="NIK KTP"
+                           promptText="Umur"
                            styleClass="input-field"/>
 
                 <DatePicker fx:id="regTglMasuk"
                             promptText="Tanggal Masuk"
                             prefWidth="330"
                             styleClass="input-field"/>
-
-                <ComboBox fx:id="regStatus"
-                          promptText="Status"
-                          prefWidth="330"
-                          styleClass="input-field"/>
 
                 <TextField fx:id="regUsername"
                            promptText="Username"

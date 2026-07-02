@@ -2,28 +2,19 @@ package ProjekAstra.Controller.Login;
 
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.MainApp;
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-import javafx.scene.control.*;
-
-import java.net.URL;
-import java.sql.CallableStatement;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.time.LocalDate;
-import java.util.ResourceBundle;
+import ProjekAstra.Util.NotifUtil;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
 import java.net.URL;
-import java.util.ResourceBundle;
-import java.time.LocalDate;
-
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.LocalDate;
+import java.util.ResourceBundle;
+
 public class LoginKaryawan implements Initializable {
 
     @FXML private VBox paneLogin;
@@ -37,21 +28,14 @@ public class LoginKaryawan implements Initializable {
     @FXML private TextField regNama;
     @FXML private TextField regNoTelp;
     @FXML private TextField regAlamat;
-    @FXML private TextField regUmur;      // Prompt di FXML = NIK KTP
+    @FXML private TextField regUmur;
     @FXML private DatePicker regTglMasuk;
-    @FXML private ComboBox<String> regStatus;
     @FXML private TextField regUsername;
     @FXML private PasswordField regPassword;
 
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        regStatus.getItems().addAll(
-                "Admin",
-                "Resepsionis",
-                "Keuangan",
-                "Manajer"
-        );
+        // Tidak ada lagi pilihan jabatan — semua karyawan otomatis SuperAdmin
     }
 
     @FXML
@@ -62,8 +46,8 @@ public class LoginKaryawan implements Initializable {
         paneRegister.setVisible(false);
         paneRegister.setManaged(false);
 
-        tabLogin.setStyle("-fx-background-color: #1565C0; -fx-text-fill: white; -fx-background-radius: 8;");
-        tabRegister.setStyle("-fx-background-color: transparent; -fx-text-fill: #616161;");
+        tabLogin.getStyleClass().setAll("tab-btn-active");
+        tabRegister.getStyleClass().setAll("tab-btn-inactive");
     }
 
     @FXML
@@ -74,8 +58,8 @@ public class LoginKaryawan implements Initializable {
         paneLogin.setVisible(false);
         paneLogin.setManaged(false);
 
-        tabRegister.setStyle("-fx-background-color: #1565C0; -fx-text-fill: white; -fx-background-radius: 8;");
-        tabLogin.setStyle("-fx-background-color: transparent; -fx-text-fill: #616161;");
+        tabRegister.getStyleClass().setAll("tab-btn-active");
+        tabLogin.getStyleClass().setAll("tab-btn-inactive");
     }
 
     @FXML
@@ -85,44 +69,36 @@ public class LoginKaryawan implements Initializable {
         String password = loginPassword.getText().trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Username dan Password wajib diisi!");
+            notifLogin(NotifUtil.Type.WARNING, "Username dan Password wajib diisi!");
             return;
         }
 
         Koneksi k = new Koneksi();
 
         try {
-
-            String sql = "SELECT NamaKaryawan, Status FROM Karyawan WHERE Username=? AND Password=?";
+            // Hanya karyawan berstatus AKTIF yang bisa login
+            String sql = "SELECT NamaKaryawan, Status, Role FROM Karyawan WHERE Username=? AND Password=? AND Status='AKTIF'";
 
             PreparedStatement ps = k.conn.prepareStatement(sql);
-
             ps.setString(1, username);
             ps.setString(2, password);
 
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-
-                MainApp.switchScene("/UIDashboard/UIDashboardKaryawan.fxml");
-
+                String nama = rs.getString("NamaKaryawan");
+                // Popup sukses muncul dulu, baru pindah scene setelah user klik OK
+                NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
+                        "Login berhasil! Selamat datang, " + nama + " 🌸",
+                        () -> MainApp.switchScene("/UIDashboard/UIDashboardKaryawan.fxml"));
             } else {
-
-                alert(Alert.AlertType.ERROR, "Username atau Password salah!");
-
+                notifLogin(NotifUtil.Type.ERROR, "Username/Password salah atau akun tidak aktif!");
             }
 
         } catch (Exception e) {
-
-            alert(Alert.AlertType.ERROR,
-                    "Gagal terhubung ke database : " + e.getMessage());
-
+            notifLogin(NotifUtil.Type.ERROR, "Gagal terhubung ke database : " + e.getMessage());
         } finally {
-
-            try {
-                k.conn.close();
-            } catch (Exception ignored) {}
-
+            try { k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
@@ -132,77 +108,71 @@ public class LoginKaryawan implements Initializable {
         String nama = regNama.getText().trim();
         String noTelp = regNoTelp.getText().trim();
         String alamat = regAlamat.getText().trim();
-        String nikKtp = regUmur.getText().trim(); // field NIK KTP
+        String umurText = regUmur.getText().trim();
         LocalDate tglMasuk = regTglMasuk.getValue();
-        String status = regStatus.getValue();
         String username = regUsername.getText().trim();
         String password = regPassword.getText().trim();
 
         if (nama.isEmpty() ||
                 noTelp.isEmpty() ||
                 alamat.isEmpty() ||
-                nikKtp.isEmpty() ||
+                umurText.isEmpty() ||
                 tglMasuk == null ||
-                status == null ||
                 username.isEmpty() ||
                 password.isEmpty()) {
 
-            alert(Alert.AlertType.WARNING,
-                    "Semua field wajib diisi!");
+            notifRegister(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
+            return;
+        }
 
+        int umur;
+        try {
+            umur = Integer.parseInt(umurText);
+        } catch (NumberFormatException e) {
+            notifRegister(NotifUtil.Type.WARNING, "Umur harus berupa angka!");
             return;
         }
 
         Koneksi k = new Koneksi();
 
         try {
-
+            // sp_InsertKaryawan: Status='AKTIF' dan Role='SuperAdmin' otomatis di dalam SP
             CallableStatement cs =
-                    k.conn.prepareCall("{call sp_InsertKaryawan(?, ?, ?, ?, ?, ?, ?, ?)}");
+                    k.conn.prepareCall("{call sp_InsertKaryawan(?, ?, ?, ?, ?, ?, ?)}");
 
             cs.setString(1, nama);
             cs.setString(2, noTelp);
             cs.setString(3, alamat);
-            cs.setString(4, nikKtp); // sementara memakai parameter ke-4
+            cs.setInt(4, umur);
             cs.setString(5, username);
             cs.setString(6, password);
             cs.setDate(7, java.sql.Date.valueOf(tglMasuk));
-            cs.setString(8, status);
 
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION,
-                    "Pendaftaran berhasil! Silakan login.");
-
-            clearRegisterForm();
-
-            showLogin();
+            // Setelah popup sukses ditutup, baru form dibersihkan & balik ke tab login
+            NotifUtil.show(regNama, NotifUtil.Type.SUCCESS,
+                    "Pendaftaran berhasil! Silakan login.",
+                    () -> {
+                        clearRegisterForm();
+                        showLogin();
+                    });
 
         } catch (Exception e) {
-
-            alert(Alert.AlertType.ERROR,
-                    "Gagal mendaftar : " + e.getMessage());
-
+            notifRegister(NotifUtil.Type.ERROR, "Gagal mendaftar : " + e.getMessage());
         } finally {
-
-            try {
-                k.conn.close();
-            } catch (Exception ignored) {}
-
+            try { k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
     private void clearRegisterForm() {
-
         regNama.clear();
         regNoTelp.clear();
         regAlamat.clear();
         regUmur.clear();
         regTglMasuk.setValue(null);
-        regStatus.setValue(null);
         regUsername.clear();
         regPassword.clear();
-
     }
 
     @FXML
@@ -210,12 +180,14 @@ public class LoginKaryawan implements Initializable {
         MainApp.switchScene("/UIMainView/UITampilan.fxml");
     }
 
-    private void alert(Alert.AlertType type, String msg) {
+    // ===========================================================
+    // NOTIF HELPERS
+    // ===========================================================
+    private void notifLogin(NotifUtil.Type type, String msg) {
+        NotifUtil.show(loginUsername, type, msg);
+    }
 
-        Alert alert = new Alert(type);
-        alert.setHeaderText(null);
-        alert.setContentText(msg);
-        alert.showAndWait();
-
+    private void notifRegister(NotifUtil.Type type, String msg) {
+        NotifUtil.show(regNama, type, msg);
     }
 }

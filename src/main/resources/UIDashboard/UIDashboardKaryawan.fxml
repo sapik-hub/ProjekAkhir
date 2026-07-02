@@ -23,6 +23,10 @@
             <Button fx:id="btnKaryawan" text="👤  Karyawan" onAction="#handleKaryawan"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     styleClass="sidebar-menu-btn-active"/>
+
+            <Button fx:id="btnPemilik" text="🏘️  Pemilik" onAction="#handlePemilik"
+                    prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
+                    styleClass="sidebar-menu-btn"/>
         </VBox>
     </left>
 
