@@ -21,7 +21,10 @@
                 </Label>
 
                 <TextField fx:id="txtId" promptText="ID Villa" editable="false" styleClass="input-field"/>
-                <ComboBox fx:id="cbPemilik" promptText="Pilih Pemilik" maxWidth="Infinity" styleClass="input-field"/>
+                <TextField fx:id="txtPemilik"
+                           editable="false"
+                           promptText="Pemilik"
+                           styleClass="input-field"/>
                 <ComboBox fx:id="cbKategori" promptText="Pilih Kategori" maxWidth="Infinity" styleClass="input-field"/>
                 <TextField fx:id="txtNamaVilla" promptText="Nama Villa" styleClass="input-field"/>
                 <TextField fx:id="txtKapasitas" promptText="Kapasitas (orang)" styleClass="input-field"/>

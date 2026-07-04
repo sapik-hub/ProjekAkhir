@@ -76,7 +76,6 @@ public class LoginKaryawan implements Initializable {
         Koneksi k = new Koneksi();
 
         try {
-            // Hanya karyawan berstatus AKTIF yang bisa login
             String sql = "SELECT NamaKaryawan, Status, Role FROM Karyawan WHERE Username=? AND Password=? AND Status='AKTIF'";
 
             PreparedStatement ps = k.conn.prepareStatement(sql);
@@ -87,7 +86,6 @@ public class LoginKaryawan implements Initializable {
 
             if (rs.next()) {
                 String nama = rs.getString("NamaKaryawan");
-                // Popup sukses muncul dulu, baru pindah scene setelah user klik OK
                 NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
                         "Login berhasil! Selamat datang, " + nama + " 🌸",
                         () -> MainApp.switchScene("/UIDashboard/UIDashboardKaryawan.fxml"));
@@ -136,7 +134,6 @@ public class LoginKaryawan implements Initializable {
         Koneksi k = new Koneksi();
 
         try {
-            // sp_InsertKaryawan: Status='AKTIF' dan Role='SuperAdmin' otomatis di dalam SP
             CallableStatement cs =
                     k.conn.prepareCall("{call sp_InsertKaryawan(?, ?, ?, ?, ?, ?, ?)}");
 
@@ -150,7 +147,6 @@ public class LoginKaryawan implements Initializable {
 
             cs.execute();
 
-            // Setelah popup sukses ditutup, baru form dibersihkan & balik ke tab login
             NotifUtil.show(regNama, NotifUtil.Type.SUCCESS,
                     "Pendaftaran berhasil! Silakan login.",
                     () -> {
@@ -180,9 +176,6 @@ public class LoginKaryawan implements Initializable {
         MainApp.switchScene("/UIMainView/UITampilan.fxml");
     }
 
-    // ===========================================================
-    // NOTIF HELPERS
-    // ===========================================================
     private void notifLogin(NotifUtil.Type type, String msg) {
         NotifUtil.show(loginUsername, type, msg);
     }

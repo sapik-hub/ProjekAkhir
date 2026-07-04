@@ -2,12 +2,15 @@ package ProjekAstra.Controller.Master;
 
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.Model.Penyewa;
+import ProjekAstra.Util.ConfirmUtil;
+import ProjekAstra.Util.NotifUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyEvent;
 
 import java.net.URL;
 import java.sql.CallableStatement;
@@ -19,15 +22,14 @@ import java.util.ResourceBundle;
 public class CrudPenyewa implements Initializable {
 
     // ===== FORM =====
-    @FXML private TextField txtId, txtNama, txtNoTelp, txtUmur, txtAlamat, txtUsername, txtCari;
+    @FXML private TextField txtId, txtNama, txtNoTelp, txtNikKtp, txtAlamat, txtUsername, txtCari;
     @FXML private PasswordField txtPassword;
     @FXML private DatePicker dpTglLahir;
     @FXML private Button btnSimpan, btnUbah, btnHapus;
 
     // ===== TABLE =====
     @FXML private TableView<Penyewa> tablePenyewa;
-    @FXML private TableColumn<Penyewa, String> colId, colNama, colNoTelp, colAlamat, colUsername;
-    @FXML private TableColumn<Penyewa, Integer> colUmur;
+    @FXML private TableColumn<Penyewa, String> colId, colNama, colNoTelp, colNikKtp, colAlamat, colUsername;
     @FXML private TableColumn<Penyewa, LocalDate> colTglLahir;
 
     private final ObservableList<Penyewa> listPenyewa = FXCollections.observableArrayList();
@@ -53,10 +55,19 @@ public class CrudPenyewa implements Initializable {
         colId.setCellValueFactory(new PropertyValueFactory<>("idPenyewa"));
         colNama.setCellValueFactory(new PropertyValueFactory<>("nama"));
         colNoTelp.setCellValueFactory(new PropertyValueFactory<>("noTelp"));
-        colUmur.setCellValueFactory(new PropertyValueFactory<>("umur"));
+        colNikKtp.setCellValueFactory(new PropertyValueFactory<>("nikKtp"));
         colTglLahir.setCellValueFactory(new PropertyValueFactory<>("tglLahir"));
         colAlamat.setCellValueFactory(new PropertyValueFactory<>("alamat"));
         colUsername.setCellValueFactory(new PropertyValueFactory<>("username"));
+    }
+
+    // Batasi input NIK cuma angka
+    @FXML
+    private void handleNikOnlyNumber(KeyEvent event) {
+        String karakter = event.getCharacter();
+        if (!karakter.matches("[0-9]")) {
+            event.consume();
+        }
     }
 
     // ===========================================================
@@ -76,7 +87,7 @@ public class CrudPenyewa implements Initializable {
                         rs.getString("IdPenyewa"),
                         rs.getString("Nama"),
                         rs.getString("NoTelp"),
-                        rs.getInt("Umur"),
+                        rs.getString("NikKtp"),
                         tgl != null ? tgl.toLocalDate() : null,
                         rs.getString("Alamat"),
                         rs.getString("Username")
@@ -84,7 +95,7 @@ public class CrudPenyewa implements Initializable {
             }
             tablePenyewa.setItems(listPenyewa);
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal memuat data: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal memuat data: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -114,23 +125,24 @@ public class CrudPenyewa implements Initializable {
 
         Koneksi k = new Koneksi();
         try {
+            // Urutan HARUS sama dengan sp_InsertPenyewa: Nama, NoTelp, NikKtp, TglLahir, Alamat, Username, Password
             CallableStatement cs = k.conn.prepareCall("{call sp_InsertPenyewa(?, ?, ?, ?, ?, ?, ?)}");
             cs.setString(1, txtNama.getText().trim());
             cs.setString(2, txtNoTelp.getText().trim());
-            cs.setInt(3, Integer.parseInt(txtUmur.getText().trim()));
+            cs.setString(3, txtNikKtp.getText().trim());
             cs.setDate(4, Date.valueOf(dpTglLahir.getValue()));
             cs.setString(5, txtAlamat.getText().trim());
             cs.setString(6, txtUsername.getText().trim());
             cs.setString(7, txtPassword.getText().trim());
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION, "Data penyewa berhasil ditambahkan!");
-            setClose();
-            loadTable();
-        } catch (NumberFormatException e) {
-            alert(Alert.AlertType.WARNING, "Umur harus berupa angka!");
+            NotifUtil.show(txtNama, NotifUtil.Type.SUCCESS, "Data penyewa berhasil ditambahkan!",
+                    () -> {
+                        setClose();
+                        loadTable();
+                    });
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal menyimpan (username mungkin sudah dipakai): " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal menyimpan (username mungkin sudah dipakai): " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -139,29 +151,29 @@ public class CrudPenyewa implements Initializable {
     @FXML
     private void handleUbah() {
         if (txtId.getText().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Pilih data yang ingin diubah terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data yang ingin diubah terlebih dahulu!");
             return;
         }
         if (!validasiUpdate()) return;
 
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_UpdatePenyewa(?, ?, ?, ?, ?, ?)}");
+            // Urutan HARUS sama dengan sp_UpdatePenyewa: IdPenyewa, Nama, NoTelp, TglLahir, Alamat
+            CallableStatement cs = k.conn.prepareCall("{call sp_UpdatePenyewa(?, ?, ?, ?, ?)}");
             cs.setString(1, txtId.getText());
             cs.setString(2, txtNama.getText().trim());
             cs.setString(3, txtNoTelp.getText().trim());
-            cs.setInt(4, Integer.parseInt(txtUmur.getText().trim()));
-            cs.setDate(5, Date.valueOf(dpTglLahir.getValue()));
-            cs.setString(6, txtAlamat.getText().trim());
+            cs.setDate(4, Date.valueOf(dpTglLahir.getValue()));
+            cs.setString(5, txtAlamat.getText().trim());
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION, "Data penyewa berhasil diubah!");
-            setClose();
-            loadTable();
-        } catch (NumberFormatException e) {
-            alert(Alert.AlertType.WARNING, "Umur harus berupa angka!");
+            NotifUtil.show(txtNama, NotifUtil.Type.SUCCESS, "Data penyewa berhasil diubah!",
+                    () -> {
+                        setClose();
+                        loadTable();
+                    });
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal mengubah: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -170,29 +182,30 @@ public class CrudPenyewa implements Initializable {
     @FXML
     private void handleHapus() {
         if (txtId.getText().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Pilih data yang ingin dihapus terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data yang ingin dihapus terlebih dahulu!");
             return;
         }
 
-        Alert konfirmasi = new Alert(Alert.AlertType.CONFIRMATION);
-        konfirmasi.setHeaderText(null);
-        konfirmasi.setContentText("Yakin ingin menghapus penyewa " + txtNama.getText() + "?");
-        if (konfirmasi.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
+        ConfirmUtil.show(txtNama,
+                "Yakin ingin menghapus penyewa " + txtNama.getText() + "?",
+                () -> {
+                    Koneksi k = new Koneksi();
+                    try {
+                        CallableStatement cs = k.conn.prepareCall("{call sp_DeletePenyewa(?)}");
+                        cs.setString(1, txtId.getText());
+                        cs.execute();
 
-        Koneksi k = new Koneksi();
-        try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_DeletePenyewa(?)}");
-            cs.setString(1, txtId.getText());
-            cs.execute();
-
-            alert(Alert.AlertType.INFORMATION, "Data penyewa berhasil dihapus!");
-            setClose();
-            loadTable();
-        } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal menghapus: " + e.getMessage());
-        } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
-        }
+                        NotifUtil.show(txtNama, NotifUtil.Type.SUCCESS, "Data penyewa berhasil dihapus!",
+                                () -> {
+                                    setClose();
+                                    loadTable();
+                                });
+                    } catch (Exception e) {
+                        notif(NotifUtil.Type.ERROR, "Gagal menghapus: " + e.getMessage());
+                    } finally {
+                        try { k.conn.close(); } catch (Exception ignored) {}
+                    }
+                });
     }
 
     @FXML
@@ -207,31 +220,41 @@ public class CrudPenyewa implements Initializable {
         txtId.setText(p.getIdPenyewa());
         txtNama.setText(p.getNama());
         txtNoTelp.setText(p.getNoTelp());
-        txtUmur.setText(String.valueOf(p.getUmur()));
+        txtNikKtp.setText(p.getNikKtp());
         dpTglLahir.setValue(p.getTglLahir());
         txtAlamat.setText(p.getAlamat());
         txtUsername.setText(p.getUsername());
         txtPassword.clear();
 
-        // Username & password tidak ikut diubah lewat sp_UpdatePenyewa
+        // NIK, Username & password tidak ikut diubah lewat sp_UpdatePenyewa
+        txtNikKtp.setDisable(true);
         txtUsername.setDisable(true);
         txtPassword.setDisable(true);
+
+        btnSimpan.setDisable(true);
+        btnUbah.setDisable(false);
+        btnHapus.setDisable(false);
     }
 
     private void setClose() {
         txtId.clear();
         txtNama.clear();
         txtNoTelp.clear();
-        txtUmur.clear();
+        txtNikKtp.clear();
         txtAlamat.clear();
         txtUsername.clear();
         txtPassword.clear();
         dpTglLahir.setValue(null);
 
+        txtNikKtp.setDisable(false);
         txtUsername.setDisable(false);
         txtPassword.setDisable(false);
 
         tablePenyewa.getSelectionModel().clearSelection();
+
+        btnSimpan.setDisable(false);
+        btnUbah.setDisable(true);
+        btnHapus.setDisable(true);
     }
 
     // ===========================================================
@@ -239,10 +262,14 @@ public class CrudPenyewa implements Initializable {
     // ===========================================================
     private boolean validasiInsert() {
         if (txtNama.getText().trim().isEmpty() || txtNoTelp.getText().trim().isEmpty() ||
-                txtUmur.getText().trim().isEmpty() || dpTglLahir.getValue() == null ||
+                txtNikKtp.getText().trim().isEmpty() || dpTglLahir.getValue() == null ||
                 txtAlamat.getText().trim().isEmpty() || txtUsername.getText().trim().isEmpty() ||
                 txtPassword.getText().trim().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Semua field wajib diisi!");
+            notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
+            return false;
+        }
+        if (!txtNikKtp.getText().trim().matches("\\d{16}")) {
+            notif(NotifUtil.Type.WARNING, "NIK KTP harus terdiri dari 16 digit angka!");
             return false;
         }
         return true;
@@ -250,9 +277,8 @@ public class CrudPenyewa implements Initializable {
 
     private boolean validasiUpdate() {
         if (txtNama.getText().trim().isEmpty() || txtNoTelp.getText().trim().isEmpty() ||
-                txtUmur.getText().trim().isEmpty() || dpTglLahir.getValue() == null ||
-                txtAlamat.getText().trim().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Semua field wajib diisi!");
+                dpTglLahir.getValue() == null || txtAlamat.getText().trim().isEmpty()) {
+            notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return false;
         }
         return true;
@@ -261,10 +287,7 @@ public class CrudPenyewa implements Initializable {
     // ===========================================================
     // UTIL
     // ===========================================================
-    private void alert(Alert.AlertType type, String msg) {
-        Alert a = new Alert(type);
-        a.setHeaderText(null);
-        a.setContentText(msg);
-        a.showAndWait();
+    private void notif(NotifUtil.Type type, String msg) {
+        NotifUtil.show(txtNama, type, msg);
     }
 }

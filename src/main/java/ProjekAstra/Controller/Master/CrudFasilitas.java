@@ -2,6 +2,8 @@ package ProjekAstra.Controller.Master;
 
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.Model.Fasilitas;
+import ProjekAstra.Util.ConfirmUtil;
+import ProjekAstra.Util.NotifUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -41,7 +43,6 @@ public class CrudFasilitas implements Initializable {
         });
 
         txtCari.textProperty().addListener((obs, oldVal, newVal) -> cariFasilitas(newVal));
-        generateIdVilla();
     }
 
     private void setupTable() {
@@ -63,7 +64,7 @@ public class CrudFasilitas implements Initializable {
                 cbVilla.getItems().add(rs.getString("IdVilla") + " - " + rs.getString("NamaVilla"));
             }
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal memuat data villa: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal memuat data villa: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -87,7 +88,7 @@ public class CrudFasilitas implements Initializable {
             }
             tableFasilitas.setItems(listFasilitas);
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal memuat data: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal memuat data: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -121,13 +122,15 @@ public class CrudFasilitas implements Initializable {
             cs.setString(4, txtDeskripsi.getText().trim());
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION, "Fasilitas berhasil ditambahkan!");
-            setClose();
-            loadTable();
+            NotifUtil.show(txtNamaFasilitas, NotifUtil.Type.SUCCESS, "Fasilitas berhasil ditambahkan!",
+                    () -> {
+                        setClose();
+                        loadTable();
+                    });
         } catch (NumberFormatException e) {
-            alert(Alert.AlertType.WARNING, "Jumlah harus berupa angka!");
+            notif(NotifUtil.Type.WARNING, "Jumlah harus berupa angka!");
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal menyimpan: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal menyimpan: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -136,7 +139,7 @@ public class CrudFasilitas implements Initializable {
     @FXML
     private void handleUbah() {
         if (txtId.getText().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Pilih data yang ingin diubah terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data yang ingin diubah terlebih dahulu!");
             return;
         }
         if (!validasi()) return;
@@ -150,13 +153,15 @@ public class CrudFasilitas implements Initializable {
             cs.setString(4, txtDeskripsi.getText().trim());
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION, "Fasilitas berhasil diubah!");
-            setClose();
-            loadTable();
+            NotifUtil.show(txtNamaFasilitas, NotifUtil.Type.SUCCESS, "Fasilitas berhasil diubah!",
+                    () -> {
+                        setClose();
+                        loadTable();
+                    });
         } catch (NumberFormatException e) {
-            alert(Alert.AlertType.WARNING, "Jumlah harus berupa angka!");
+            notif(NotifUtil.Type.WARNING, "Jumlah harus berupa angka!");
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal mengubah: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -165,29 +170,30 @@ public class CrudFasilitas implements Initializable {
     @FXML
     private void handleHapus() {
         if (txtId.getText().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Pilih data yang ingin dihapus terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data yang ingin dihapus terlebih dahulu!");
             return;
         }
 
-        Alert konfirmasi = new Alert(Alert.AlertType.CONFIRMATION);
-        konfirmasi.setHeaderText(null);
-        konfirmasi.setContentText("Yakin ingin menghapus fasilitas " + txtNamaFasilitas.getText() + "?");
-        if (konfirmasi.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
+        ConfirmUtil.show(txtNamaFasilitas,
+                "Yakin ingin menghapus fasilitas " + txtNamaFasilitas.getText() + "?",
+                () -> {
+                    Koneksi k = new Koneksi();
+                    try {
+                        CallableStatement cs = k.conn.prepareCall("{call sp_DeleteFasilitas(?)}");
+                        cs.setString(1, txtId.getText());
+                        cs.execute();
 
-        Koneksi k = new Koneksi();
-        try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_DeleteFasilitas(?)}");
-            cs.setString(1, txtId.getText());
-            cs.execute();
-
-            alert(Alert.AlertType.INFORMATION, "Fasilitas berhasil dihapus!");
-            setClose();
-            loadTable();
-        } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal menghapus: " + e.getMessage());
-        } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
-        }
+                        NotifUtil.show(txtNamaFasilitas, NotifUtil.Type.SUCCESS, "Fasilitas berhasil dihapus!",
+                                () -> {
+                                    setClose();
+                                    loadTable();
+                                });
+                    } catch (Exception e) {
+                        notif(NotifUtil.Type.ERROR, "Gagal menghapus: " + e.getMessage());
+                    } finally {
+                        try { k.conn.close(); } catch (Exception ignored) {}
+                    }
+                });
     }
 
     @FXML
@@ -205,6 +211,10 @@ public class CrudFasilitas implements Initializable {
 
         selectComboByName(cbVilla, f.getNamaVilla());
         cbVilla.setDisable(true);
+
+        btnSimpan.setDisable(true);
+        btnUbah.setDisable(false);
+        btnHapus.setDisable(false);
     }
 
     private void selectComboByName(ComboBox<String> combo, String nama) {
@@ -229,26 +239,28 @@ public class CrudFasilitas implements Initializable {
         cbVilla.setValue(null);
         cbVilla.setDisable(false);
         tableFasilitas.getSelectionModel().clearSelection();
+
+        btnSimpan.setDisable(false);
+        btnUbah.setDisable(true);
+        btnHapus.setDisable(true);
+        generateIdVilla();
     }
 
     private boolean validasi() {
         if (cbVilla.getValue() == null || txtNamaFasilitas.getText().trim().isEmpty() ||
                 txtJumlah.getText().trim().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Villa, Nama Fasilitas, dan Jumlah wajib diisi!");
+            notif(NotifUtil.Type.WARNING, "Villa, Nama Fasilitas, dan Jumlah wajib diisi!");
             return false;
         }
         return true;
     }
 
-    private void alert(Alert.AlertType type, String msg) {
-        Alert a = new Alert(type);
-        a.setHeaderText(null);
-        a.setContentText(msg);
-        a.showAndWait();
+    private void notif(NotifUtil.Type type, String msg) {
+        NotifUtil.show(txtNamaFasilitas, type, msg);
     }
+
     public void generateIdVilla() {
         Koneksi k = new Koneksi();
-
         try {
             String sql = "SELECT dbo.fnNextIdFasilitas() AS IdFasilitas";
             PreparedStatement ps = k.conn.prepareStatement(sql);
@@ -257,14 +269,10 @@ public class CrudFasilitas implements Initializable {
             if (rs.next()) {
                 txtId.setText(rs.getString("IdFasilitas"));
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            try {
-                k.conn.close();
-            } catch (Exception ex) {
-            }
+            try { k.conn.close(); } catch (Exception ignored) {}
         }
     }
 }

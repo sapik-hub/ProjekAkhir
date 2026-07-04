@@ -2,6 +2,8 @@ package ProjekAstra.Controller.Master;
 
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.Model.KategoriVilla;
+import ProjekAstra.Util.ConfirmUtil;
+import ProjekAstra.Util.NotifUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -38,7 +40,6 @@ public class CrudKategoriVilla implements Initializable {
         });
 
         txtCari.textProperty().addListener((obs, oldVal, newVal) -> cariKategori(newVal));
-        generateIdVilla();
     }
 
     private void setupTable() {
@@ -64,7 +65,7 @@ public class CrudKategoriVilla implements Initializable {
             }
             tableKategori.setItems(listKategori);
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal memuat data: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal memuat data: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -96,11 +97,13 @@ public class CrudKategoriVilla implements Initializable {
             cs.setString(2, txtDeskripsi.getText().trim());
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION, "Kategori berhasil ditambahkan!");
-            setClose();
-            loadTable();
+            NotifUtil.show(txtNamaKategori, NotifUtil.Type.SUCCESS, "Kategori berhasil ditambahkan!",
+                    () -> {
+                        setClose();
+                        loadTable();
+                    });
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal menyimpan: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal menyimpan: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -109,7 +112,7 @@ public class CrudKategoriVilla implements Initializable {
     @FXML
     private void handleUbah() {
         if (txtId.getText().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Pilih data yang ingin diubah terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data yang ingin diubah terlebih dahulu!");
             return;
         }
         if (!validasi()) return;
@@ -122,11 +125,13 @@ public class CrudKategoriVilla implements Initializable {
             cs.setString(3, txtDeskripsi.getText().trim());
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION, "Kategori berhasil diubah!");
-            setClose();
-            loadTable();
+            NotifUtil.show(txtNamaKategori, NotifUtil.Type.SUCCESS, "Kategori berhasil diubah!",
+                    () -> {
+                        setClose();
+                        loadTable();
+                    });
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal mengubah: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -135,29 +140,30 @@ public class CrudKategoriVilla implements Initializable {
     @FXML
     private void handleHapus() {
         if (txtId.getText().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Pilih data yang ingin dihapus terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data yang ingin dihapus terlebih dahulu!");
             return;
         }
 
-        Alert konfirmasi = new Alert(Alert.AlertType.CONFIRMATION);
-        konfirmasi.setHeaderText(null);
-        konfirmasi.setContentText("Yakin ingin menghapus kategori " + txtNamaKategori.getText() + "?");
-        if (konfirmasi.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
+        ConfirmUtil.show(txtNamaKategori,
+                "Yakin ingin menghapus kategori " + txtNamaKategori.getText() + "?",
+                () -> {
+                    Koneksi k = new Koneksi();
+                    try {
+                        CallableStatement cs = k.conn.prepareCall("{call sp_DeleteKategori(?)}");
+                        cs.setString(1, txtId.getText());
+                        cs.execute();
 
-        Koneksi k = new Koneksi();
-        try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_DeleteKategori(?)}");
-            cs.setString(1, txtId.getText());
-            cs.execute();
-
-            alert(Alert.AlertType.INFORMATION, "Kategori berhasil dihapus!");
-            setClose();
-            loadTable();
-        } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal menghapus (mungkin masih dipakai oleh data Villa): " + e.getMessage());
-        } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
-        }
+                        NotifUtil.show(txtNamaKategori, NotifUtil.Type.SUCCESS, "Kategori berhasil dihapus!",
+                                () -> {
+                                    setClose();
+                                    loadTable();
+                                });
+                    } catch (Exception e) {
+                        notif(NotifUtil.Type.ERROR, "Gagal menghapus (mungkin masih dipakai oleh data Villa): " + e.getMessage());
+                    } finally {
+                        try { k.conn.close(); } catch (Exception ignored) {}
+                    }
+                });
     }
 
     @FXML
@@ -169,6 +175,10 @@ public class CrudKategoriVilla implements Initializable {
         txtId.setText(k.getIdKategori());
         txtNamaKategori.setText(k.getNamaKategori());
         txtDeskripsi.setText(k.getDeskripsi());
+
+        btnSimpan.setDisable(true);
+        btnUbah.setDisable(false);
+        btnHapus.setDisable(false);
     }
 
     private void setClose() {
@@ -176,25 +186,27 @@ public class CrudKategoriVilla implements Initializable {
         txtNamaKategori.clear();
         txtDeskripsi.clear();
         tableKategori.getSelectionModel().clearSelection();
+
+        btnSimpan.setDisable(false);
+        btnUbah.setDisable(true);
+        btnHapus.setDisable(true);
+        generateIdVilla();
     }
 
     private boolean validasi() {
         if (txtNamaKategori.getText().trim().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Nama kategori wajib diisi!");
+            notif(NotifUtil.Type.WARNING, "Nama kategori wajib diisi!");
             return false;
         }
         return true;
     }
 
-    private void alert(Alert.AlertType type, String msg) {
-        Alert a = new Alert(type);
-        a.setHeaderText(null);
-        a.setContentText(msg);
-        a.showAndWait();
+    private void notif(NotifUtil.Type type, String msg) {
+        NotifUtil.show(txtNamaKategori, type, msg);
     }
+
     public void generateIdVilla() {
         Koneksi k = new Koneksi();
-
         try {
             String sql = "SELECT dbo.fnNextIdKategori() AS IdKategori";
             PreparedStatement ps = k.conn.prepareStatement(sql);
@@ -203,14 +215,10 @@ public class CrudKategoriVilla implements Initializable {
             if (rs.next()) {
                 txtId.setText(rs.getString("IdKategori"));
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            try {
-                k.conn.close();
-            } catch (Exception ex) {
-            }
+            try { k.conn.close(); } catch (Exception ignored) {}
         }
     }
 }

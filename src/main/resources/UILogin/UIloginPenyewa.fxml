@@ -93,6 +93,10 @@
                            promptText="Nama Lengkap"
                            styleClass="input-field"/>
 
+                <TextField fx:id="regNoTelp"
+                           promptText="No. Telepon"
+                           styleClass="input-field"/>
+
                 <TextField fx:id="regNikKtp"
                            promptText="NIK KTP"
                            styleClass="input-field"
@@ -121,7 +125,6 @@
                         styleClass="btn-primary"/>
 
             </VBox>
-
         </VBox>
 
     </VBox>

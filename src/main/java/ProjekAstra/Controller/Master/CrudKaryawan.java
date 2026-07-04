@@ -2,6 +2,8 @@ package ProjekAstra.Controller.Master;
 
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.Model.Karyawan;
+import ProjekAstra.Util.ConfirmUtil;
+import ProjekAstra.Util.NotifUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -89,7 +91,7 @@ public class CrudKaryawan implements Initializable {
             }
             tableKaryawan.setItems(listKaryawan);
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal memuat data: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal memuat data: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -130,13 +132,15 @@ public class CrudKaryawan implements Initializable {
             cs.setDate(7, Date.valueOf(dpTanggalMasuk.getValue()));
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION, "Data karyawan berhasil ditambahkan!");
-            setClose();
-            loadTable();
+            NotifUtil.show(txtNama, NotifUtil.Type.SUCCESS, "Data karyawan berhasil ditambahkan!",
+                    () -> {
+                        setClose();
+                        loadTable();
+                    });
         } catch (NumberFormatException e) {
-            alert(Alert.AlertType.WARNING, "Umur harus berupa angka!");
+            notif(NotifUtil.Type.WARNING, "Umur harus berupa angka!");
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal menyimpan (username mungkin sudah dipakai): " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal menyimpan (username mungkin sudah dipakai): " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -145,7 +149,7 @@ public class CrudKaryawan implements Initializable {
     @FXML
     private void handleUbah() {
         if (txtId.getText().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Pilih data yang ingin diubah terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data yang ingin diubah terlebih dahulu!");
             return;
         }
         if (!validasiUpdate()) return;
@@ -160,13 +164,15 @@ public class CrudKaryawan implements Initializable {
             cs.setInt(5, Integer.parseInt(txtUmur.getText().trim()));
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION, "Data karyawan berhasil diubah!");
-            setClose();
-            loadTable();
+            NotifUtil.show(txtNama, NotifUtil.Type.SUCCESS, "Data karyawan berhasil diubah!",
+                    () -> {
+                        setClose();
+                        loadTable();
+                    });
         } catch (NumberFormatException e) {
-            alert(Alert.AlertType.WARNING, "Umur harus berupa angka!");
+            notif(NotifUtil.Type.WARNING, "Umur harus berupa angka!");
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal mengubah: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -175,29 +181,30 @@ public class CrudKaryawan implements Initializable {
     @FXML
     private void handleHapus() {
         if (txtId.getText().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Pilih data yang ingin dinonaktifkan terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data yang ingin dinonaktifkan terlebih dahulu!");
             return;
         }
 
-        Alert konfirmasi = new Alert(Alert.AlertType.CONFIRMATION);
-        konfirmasi.setHeaderText(null);
-        konfirmasi.setContentText("Yakin ingin menonaktifkan karyawan " + txtNama.getText() + "?");
-        if (konfirmasi.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
+        ConfirmUtil.show(txtNama,
+                "Yakin ingin menonaktifkan karyawan " + txtNama.getText() + "?",
+                () -> {
+                    Koneksi k = new Koneksi();
+                    try {
+                        CallableStatement cs = k.conn.prepareCall("{call sp_DeleteKaryawan(?)}");
+                        cs.setString(1, txtId.getText());
+                        cs.execute();
 
-        Koneksi k = new Koneksi();
-        try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_DeleteKaryawan(?)}");
-            cs.setString(1, txtId.getText());
-            cs.execute();
-
-            alert(Alert.AlertType.INFORMATION, "Karyawan berhasil dinonaktifkan!");
-            setClose();
-            loadTable();
-        } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal menonaktifkan: " + e.getMessage());
-        } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
-        }
+                        NotifUtil.show(txtNama, NotifUtil.Type.SUCCESS, "Karyawan berhasil dinonaktifkan!",
+                                () -> {
+                                    setClose();
+                                    loadTable();
+                                });
+                    } catch (Exception e) {
+                        notif(NotifUtil.Type.ERROR, "Gagal menonaktifkan: " + e.getMessage());
+                    } finally {
+                        try { k.conn.close(); } catch (Exception ignored) {}
+                    }
+                });
     }
 
     @FXML
@@ -222,6 +229,10 @@ public class CrudKaryawan implements Initializable {
         txtUsername.setDisable(true);
         txtPassword.setDisable(true);
         dpTanggalMasuk.setDisable(true);
+
+        btnSimpan.setDisable(true);
+        btnUbah.setDisable(false);
+        btnHapus.setDisable(false);
     }
 
     private void setClose() {
@@ -240,6 +251,10 @@ public class CrudKaryawan implements Initializable {
         dpTanggalMasuk.setDisable(false);
 
         tableKaryawan.getSelectionModel().clearSelection();
+
+        btnSimpan.setDisable(false);
+        btnUbah.setDisable(true);
+        btnHapus.setDisable(true);
     }
 
     // ===========================================================
@@ -250,7 +265,7 @@ public class CrudKaryawan implements Initializable {
                 txtUmur.getText().trim().isEmpty() || txtAlamat.getText().trim().isEmpty() ||
                 dpTanggalMasuk.getValue() == null ||
                 txtUsername.getText().trim().isEmpty() || txtPassword.getText().trim().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Semua field wajib diisi!");
+            notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return false;
         }
         return true;
@@ -259,7 +274,7 @@ public class CrudKaryawan implements Initializable {
     private boolean validasiUpdate() {
         if (txtNama.getText().trim().isEmpty() || txtNoTelp.getText().trim().isEmpty() ||
                 txtUmur.getText().trim().isEmpty() || txtAlamat.getText().trim().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Semua field wajib diisi!");
+            notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return false;
         }
         return true;
@@ -268,10 +283,7 @@ public class CrudKaryawan implements Initializable {
     // ===========================================================
     // UTIL
     // ===========================================================
-    private void alert(Alert.AlertType type, String msg) {
-        Alert a = new Alert(type);
-        a.setHeaderText(null);
-        a.setContentText(msg);
-        a.showAndWait();
+    private void notif(NotifUtil.Type type, String msg) {
+        NotifUtil.show(txtNama, type, msg);
     }
 }

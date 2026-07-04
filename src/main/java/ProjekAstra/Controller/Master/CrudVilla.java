@@ -2,6 +2,9 @@ package ProjekAstra.Controller.Master;
 
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.Model.Villa;
+import ProjekAstra.Util.ConfirmUtil;
+import ProjekAstra.Util.NotifUtil;
+import ProjekAstra.Util.Session;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -19,7 +22,8 @@ import java.util.ResourceBundle;
 public class CrudVilla implements Initializable {
 
     @FXML private TextField txtId, txtNamaVilla, txtKapasitas, txtHarga, txtAlamat, txtCari;
-    @FXML private ComboBox<String> cbPemilik, cbKategori, cbStatus;
+    @FXML private TextField txtPemilik; // read-only, isinya nama pemilik yang login
+    @FXML private ComboBox<String> cbKategori, cbStatus;
     @FXML private Button btnSimpan, btnUbah, btnHapus;
 
     @FXML private TableView<Villa> tableVilla;
@@ -34,7 +38,6 @@ public class CrudVilla implements Initializable {
         cbStatus.getItems().addAll("Tersedia", "Tidak Tersedia", "Maintenance");
 
         setupTable();
-        loadComboPemilik();
         loadComboKategori();
         loadTable();
         setClose();
@@ -45,7 +48,6 @@ public class CrudVilla implements Initializable {
         });
 
         txtCari.textProperty().addListener((obs, oldVal, newVal) -> cariVilla(newVal));
-        generateIdVilla();
     }
 
     private void setupTable() {
@@ -59,23 +61,6 @@ public class CrudVilla implements Initializable {
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
     }
 
-    // ===== Combo Pemilik (format: "PMK0001 - Budi Santoso") =====
-    private void loadComboPemilik() {
-        cbPemilik.getItems().clear();
-        Koneksi k = new Koneksi();
-        try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_GetAllPemilik}");
-            ResultSet rs = cs.executeQuery();
-            while (rs.next()) {
-                cbPemilik.getItems().add(rs.getString("IdPemilik") + " - " + rs.getString("Nama"));
-            }
-        } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal memuat data pemilik: " + e.getMessage());
-        } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
-        }
-    }
-
     // ===== Combo Kategori (format: "KAT0001 - Villa Mewah") =====
     private void loadComboKategori() {
         cbKategori.getItems().clear();
@@ -87,17 +72,19 @@ public class CrudVilla implements Initializable {
                 cbKategori.getItems().add(rs.getString("IdKategori") + " - " + rs.getString("NamaKategori"));
             }
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal memuat data kategori: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal memuat data kategori: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
+    // Cuma nampilin villa milik Pemilik yang sedang login
     private void loadTable() {
         listVilla.clear();
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_GetAllVilla}");
+            CallableStatement cs = k.conn.prepareCall("{call sp_GetVillaByPemilik(?)}");
+            cs.setString(1, Session.getIdPemilik());
             ResultSet rs = cs.executeQuery();
 
             while (rs.next()) {
@@ -114,7 +101,7 @@ public class CrudVilla implements Initializable {
             }
             tableVilla.setItems(listVilla);
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal memuat data: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal memuat data: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -142,7 +129,7 @@ public class CrudVilla implements Initializable {
         Koneksi k = new Koneksi();
         try {
             CallableStatement cs = k.conn.prepareCall("{call sp_InsertVilla(?, ?, ?, ?, ?, ?, ?)}");
-            cs.setString(1, getIdFromCombo(cbPemilik.getValue()));
+            cs.setString(1, Session.getIdPemilik());
             cs.setString(2, getIdFromCombo(cbKategori.getValue()));
             cs.setString(3, txtNamaVilla.getText().trim());
             cs.setInt(4, Integer.parseInt(txtKapasitas.getText().trim()));
@@ -151,13 +138,15 @@ public class CrudVilla implements Initializable {
             cs.setString(7, cbStatus.getValue());
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION, "Villa berhasil ditambahkan!");
-            setClose();
-            loadTable();
+            NotifUtil.show(txtNamaVilla, NotifUtil.Type.SUCCESS, "Villa berhasil ditambahkan!",
+                    () -> {
+                        setClose();
+                        loadTable();
+                    });
         } catch (NumberFormatException e) {
-            alert(Alert.AlertType.WARNING, "Kapasitas dan Harga harus berupa angka!");
+            notif(NotifUtil.Type.WARNING, "Kapasitas dan Harga harus berupa angka!");
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal menyimpan: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal menyimpan: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -166,7 +155,7 @@ public class CrudVilla implements Initializable {
     @FXML
     private void handleUbah() {
         if (txtId.getText().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Pilih data yang ingin diubah terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data yang ingin diubah terlebih dahulu!");
             return;
         }
         if (!validasiUpdate()) return;
@@ -183,13 +172,15 @@ public class CrudVilla implements Initializable {
             cs.setString(7, cbStatus.getValue());
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION, "Villa berhasil diubah!");
-            setClose();
-            loadTable();
+            NotifUtil.show(txtNamaVilla, NotifUtil.Type.SUCCESS, "Villa berhasil diubah!",
+                    () -> {
+                        setClose();
+                        loadTable();
+                    });
         } catch (NumberFormatException e) {
-            alert(Alert.AlertType.WARNING, "Kapasitas dan Harga harus berupa angka!");
+            notif(NotifUtil.Type.WARNING, "Kapasitas dan Harga harus berupa angka!");
         } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal mengubah: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -198,29 +189,30 @@ public class CrudVilla implements Initializable {
     @FXML
     private void handleHapus() {
         if (txtId.getText().isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Pilih data yang ingin dihapus terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data yang ingin dihapus terlebih dahulu!");
             return;
         }
 
-        Alert konfirmasi = new Alert(Alert.AlertType.CONFIRMATION);
-        konfirmasi.setHeaderText(null);
-        konfirmasi.setContentText("Yakin ingin menghapus villa " + txtNamaVilla.getText() + "?");
-        if (konfirmasi.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
+        ConfirmUtil.show(txtNamaVilla,
+                "Yakin ingin menghapus villa " + txtNamaVilla.getText() + "?",
+                () -> {
+                    Koneksi k = new Koneksi();
+                    try {
+                        CallableStatement cs = k.conn.prepareCall("{call sp_DeleteVilla(?)}");
+                        cs.setString(1, txtId.getText());
+                        cs.execute();
 
-        Koneksi k = new Koneksi();
-        try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_DeleteVilla(?)}");
-            cs.setString(1, txtId.getText());
-            cs.execute();
-
-            alert(Alert.AlertType.INFORMATION, "Villa berhasil dihapus!");
-            setClose();
-            loadTable();
-        } catch (Exception e) {
-            alert(Alert.AlertType.ERROR, "Gagal menghapus (mungkin masih ada data Fasilitas/Booking terkait): " + e.getMessage());
-        } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
-        }
+                        NotifUtil.show(txtNamaVilla, NotifUtil.Type.SUCCESS, "Villa berhasil dihapus!",
+                                () -> {
+                                    setClose();
+                                    loadTable();
+                                });
+                    } catch (Exception e) {
+                        notif(NotifUtil.Type.ERROR, "Gagal menghapus (mungkin masih ada data Fasilitas/Booking terkait): " + e.getMessage());
+                    } finally {
+                        try { k.conn.close(); } catch (Exception ignored) {}
+                    }
+                });
     }
 
     @FXML
@@ -228,9 +220,6 @@ public class CrudVilla implements Initializable {
         setClose();
     }
 
-    // Catatan: Pemilik & Kategori di table cuma kasih NAMA, jadi pas edit kita gak bisa
-    // langsung tau ID-nya. Pemilik tetap ditampilkan (read-only) karena gak boleh diubah,
-    // sementara Kategori dicari ID-nya berdasarkan kecocokan nama di daftar combo.
     private void populateForm(Villa v) {
         txtId.setText(v.getIdVilla());
         txtNamaVilla.setText(v.getNamaVilla());
@@ -239,11 +228,11 @@ public class CrudVilla implements Initializable {
         txtAlamat.setText(v.getAlamatVilla());
         cbStatus.setValue(v.getStatus());
 
-        selectComboByName(cbPemilik, v.getNamaPemilik());
         selectComboByName(cbKategori, v.getNamaKategori());
 
-        // Pemilik villa tidak ikut diubah lewat sp_UpdateVilla
-        cbPemilik.setDisable(true);
+        btnSimpan.setDisable(true);
+        btnUbah.setDisable(false);
+        btnHapus.setDisable(false);
     }
 
     private void selectComboByName(ComboBox<String> combo, String nama) {
@@ -266,44 +255,41 @@ public class CrudVilla implements Initializable {
         txtKapasitas.clear();
         txtHarga.clear();
         txtAlamat.clear();
-        cbPemilik.setValue(null);
         cbKategori.setValue(null);
         cbStatus.setValue(null);
-        cbPemilik.setDisable(false);
         tableVilla.getSelectionModel().clearSelection();
+
+        if (txtPemilik != null) {
+            txtPemilik.setText(Session.getNamaPemilik());
+        }
+
+        btnSimpan.setDisable(false);
+        btnUbah.setDisable(true);
+        btnHapus.setDisable(true);
+        generateIdVilla();
     }
 
     private boolean validasiInsert() {
-        if (cbPemilik.getValue() == null || cbKategori.getValue() == null ||
+        if (cbKategori.getValue() == null ||
                 txtNamaVilla.getText().trim().isEmpty() || txtKapasitas.getText().trim().isEmpty() ||
                 txtHarga.getText().trim().isEmpty() || txtAlamat.getText().trim().isEmpty() ||
                 cbStatus.getValue() == null) {
-            alert(Alert.AlertType.WARNING, "Semua field wajib diisi!");
+            notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return false;
         }
         return true;
     }
 
     private boolean validasiUpdate() {
-        if (cbKategori.getValue() == null ||
-                txtNamaVilla.getText().trim().isEmpty() || txtKapasitas.getText().trim().isEmpty() ||
-                txtHarga.getText().trim().isEmpty() || txtAlamat.getText().trim().isEmpty() ||
-                cbStatus.getValue() == null) {
-            alert(Alert.AlertType.WARNING, "Semua field wajib diisi!");
-            return false;
-        }
-        return true;
+        return validasiInsert();
     }
 
-    private void alert(Alert.AlertType type, String msg) {
-        Alert a = new Alert(type);
-        a.setHeaderText(null);
-        a.setContentText(msg);
-        a.showAndWait();
+    private void notif(NotifUtil.Type type, String msg) {
+        NotifUtil.show(txtNamaVilla, type, msg);
     }
+
     public void generateIdVilla() {
         Koneksi k = new Koneksi();
-
         try {
             String sql = "SELECT dbo.fnNextIdVilla() AS IdVilla";
             PreparedStatement ps = k.conn.prepareStatement(sql);
@@ -312,14 +298,10 @@ public class CrudVilla implements Initializable {
             if (rs.next()) {
                 txtId.setText(rs.getString("IdVilla"));
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            try {
-                k.conn.close();
-            } catch (Exception ex) {
-            }
+            try { k.conn.close(); } catch (Exception ignored) {}
         }
     }
 }

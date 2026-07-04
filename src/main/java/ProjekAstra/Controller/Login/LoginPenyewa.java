@@ -2,15 +2,16 @@ package ProjekAstra.Controller.Login;
 
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.MainApp;
+import ProjekAstra.Util.NotifUtil;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
 
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
-import javafx.scene.input.KeyEvent;
 
 public class LoginPenyewa {
 
@@ -72,7 +73,7 @@ public class LoginPenyewa {
         String password = loginPassword.getText().trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            alert(Alert.AlertType.WARNING, "Username dan Password wajib diisi!");
+            notifLogin(NotifUtil.Type.WARNING, "Username dan Password wajib diisi!");
             return;
         }
 
@@ -91,17 +92,20 @@ public class LoginPenyewa {
 
             if (rs.next()) {
 
-                MainApp.switchScene("/UIDashboard/UIDashboardPenyewa.fxml");
+                String nama = rs.getString("Nama");
+                NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
+                        "Login berhasil! Selamat datang, " + nama + " 🌸",
+                        () -> MainApp.switchScene("/UIDashboard/UIDashboardPenyewa.fxml"));
 
             } else {
 
-                alert(Alert.AlertType.ERROR, "Username atau Password salah!");
+                notifLogin(NotifUtil.Type.ERROR, "Username atau Password salah!");
 
             }
 
         } catch (Exception e) {
 
-            alert(Alert.AlertType.ERROR, "Gagal terhubung ke database : " + e.getMessage());
+            notifLogin(NotifUtil.Type.ERROR, "Gagal terhubung ke database : " + e.getMessage());
 
         } finally {
 
@@ -131,12 +135,12 @@ public class LoginPenyewa {
                 username.isEmpty() ||
                 password.isEmpty()) {
 
-            alert(Alert.AlertType.WARNING, "Semua field wajib diisi!");
+            notifRegister(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return;
         }
 
         if (!nikKtp.matches("\\d{16}")) {
-            alert(Alert.AlertType.WARNING, "NIK KTP harus terdiri dari 16 digit angka!");
+            notifRegister(NotifUtil.Type.WARNING, "NIK KTP harus terdiri dari 16 digit angka!");
             return;
         }
 
@@ -156,15 +160,16 @@ public class LoginPenyewa {
 
             cs.execute();
 
-            alert(Alert.AlertType.INFORMATION, "Pendaftaran berhasil! Silakan login.");
-
-            clearRegisterForm();
-
-            showLogin();
+            NotifUtil.show(regNama, NotifUtil.Type.SUCCESS,
+                    "Pendaftaran berhasil! Silakan login.",
+                    () -> {
+                        clearRegisterForm();
+                        showLogin();
+                    });
 
         } catch (Exception e) {
 
-            alert(Alert.AlertType.ERROR,
+            notifRegister(NotifUtil.Type.ERROR,
                     "Gagal mendaftar (username mungkin sudah dipakai): " + e.getMessage());
 
         } finally {
@@ -193,12 +198,11 @@ public class LoginPenyewa {
         MainApp.switchScene("/UIMainView/UITampilan.fxml");
     }
 
-    private void alert(Alert.AlertType type, String msg) {
+    private void notifLogin(NotifUtil.Type type, String msg) {
+        NotifUtil.show(loginUsername, type, msg);
+    }
 
-        Alert alert = new Alert(type);
-        alert.setHeaderText(null);
-        alert.setContentText(msg);
-        alert.showAndWait();
-
+    private void notifRegister(NotifUtil.Type type, String msg) {
+        NotifUtil.show(regNama, type, msg);
     }
 }
