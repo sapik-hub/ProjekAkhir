@@ -13,10 +13,10 @@
         <VBox prefWidth="220" spacing="5" styleClass="sidebar">
             <padding><Insets top="20" bottom="20" left="15" right="15"/></padding>
 
-            <Label text="🏠 VillaStay 🏡" styleClass="sidebar-title">
+            <Label text="🏠 VillaStay 🏠" styleClass="sidebar-title">
                 <font><Font name="System Bold" size="22"/></font>
             </Label>
-            <Label text="Villa Rental Management 🏡" styleClass="sidebar-subtitle" style="-fx-font-size: 11px;"/>
+            <Label text="Villa Rental Management 🏠" styleClass="sidebar-subtitle" style="-fx-font-size: 11px;"/>
 
             <Region prefHeight="25"/>
 

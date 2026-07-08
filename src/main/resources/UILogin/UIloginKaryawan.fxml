@@ -22,7 +22,7 @@
                 <Insets top="30" bottom="30" left="35" right="35"/>
             </padding>
 
-            <Label text="🏠 VillaStay 🏡" styleClass="brand-title">
+            <Label text="🏠 VillaStay 🏠" styleClass="brand-title">
                 <font>
                     <Font name="System Bold" size="28"/>
                 </font>
