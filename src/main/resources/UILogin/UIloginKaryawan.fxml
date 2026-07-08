@@ -22,7 +22,7 @@
                 <Insets top="30" bottom="30" left="35" right="35"/>
             </padding>
 
-            <Label text="🏠 VillaNesia 🌸" styleClass="brand-title">
+            <Label text="🏠 VillaStay 🏡" styleClass="brand-title">
                 <font>
                     <Font name="System Bold" size="28"/>
                 </font>
@@ -31,20 +31,30 @@
             <Label text="Akun Karyawan" styleClass="brand-subtitle"/>
 
             <!-- Toggle -->
-            <HBox prefHeight="40"
+            <HBox alignment="CENTER"
                   spacing="0"
+                  prefWidth="330"
+                  prefHeight="48"
                   styleClass="tab-bar">
 
                 <Button fx:id="tabLogin"
                         text="Masuk"
+                        prefWidth="165"
+                        prefHeight="40"
+                        alignment="CENTER"
+                        maxWidth="165"
+                        minWidth="165"
                         onAction="#showLogin"
-                        prefWidth="190"
                         styleClass="tab-btn-active"/>
 
                 <Button fx:id="tabRegister"
                         text="Daftar"
+                        prefWidth="165"
+                        prefHeight="40"
+                        alignment="CENTER"
+                        maxWidth="165"
+                        minWidth="165"
                         onAction="#showRegister"
-                        prefWidth="190"
                         styleClass="tab-btn-inactive"/>
 
             </HBox>
@@ -67,7 +77,7 @@
                             onAction="#handleKembali"
                             styleClass="btn-outline"/>
 
-                    <Button text="Masuk 🌺"
+                    <Button text="Masuk"
                             onAction="#handleLogin"
                             HBox.hgrow="ALWAYS"
                             maxWidth="Infinity"
@@ -112,7 +122,7 @@
                                promptText="Password"
                                styleClass="input-field"/>
 
-                <Button text="Daftar 🏖️"
+                <Button text="Daftar"
                         onAction="#handleRegister"
                         prefWidth="330"
                         styleClass="btn-primary"/>

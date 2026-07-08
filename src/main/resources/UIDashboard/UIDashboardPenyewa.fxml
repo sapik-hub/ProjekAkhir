@@ -13,14 +13,14 @@
         <VBox prefWidth="220" spacing="5" styleClass="sidebar">
             <padding><Insets top="20" bottom="20" left="15" right="15"/></padding>
 
-            <Label text="🏠 VillaStay" styleClass="sidebar-title">
+            <Label text="🏠 VillaStay 🏠" styleClass="sidebar-title">
                 <font><Font name="System Bold" size="22"/></font>
             </Label>
-            <Label text="Villa Rental Management 🌸" styleClass="sidebar-subtitle" style="-fx-font-size: 11px;"/>
+            <Label text="Villa Rental Management 🏠" styleClass="sidebar-subtitle" style="-fx-font-size: 11px;"/>
 
             <Region prefHeight="25"/>
 
-            <Button fx:id="btnPenyewa" text="👤  Penyewa" onAction="#handlePenyewa"
+            <Button fx:id="btnPenyewa" text="Penyewa" onAction="#handlePenyewa"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     styleClass="sidebar-menu-btn-active"/>
         </VBox>
@@ -44,7 +44,7 @@
     <center>
         <StackPane fx:id="contentPane">
             <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
-            <Label text="🌺 Selamat datang di Dashboard VillaStay" styleClass="welcome-text" style="-fx-font-size: 14px;"/>
+            <Label text="🏡 Selamat datang di Dashboard VillaStay 🏡" styleClass="welcome-text" style="-fx-font-size: 14px;"/>
         </StackPane>
     </center>
 

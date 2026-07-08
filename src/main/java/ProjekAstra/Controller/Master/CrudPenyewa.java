@@ -11,6 +11,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyEvent;
+import java.sql.PreparedStatement;
 
 import java.net.URL;
 import java.sql.CallableStatement;
@@ -37,11 +38,12 @@ public class CrudPenyewa implements Initializable {
     // ===========================================================
     // INIT
     // ===========================================================
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         setupTable();
         loadTable();
-        setClose();
+        setClose();   // ini udah manggil generateIdPenyewa() di dalamnya, jadi otomatis kepanggil
 
         tablePenyewa.setOnMouseClicked(e -> {
             Penyewa p = tablePenyewa.getSelectionModel().getSelectedItem();
@@ -255,6 +257,8 @@ public class CrudPenyewa implements Initializable {
         btnSimpan.setDisable(false);
         btnUbah.setDisable(true);
         btnHapus.setDisable(true);
+
+        generateIdPenyewa();
     }
 
     // ===========================================================
@@ -322,5 +326,22 @@ public class CrudPenyewa implements Initializable {
     // ===========================================================
     private void notif(NotifUtil.Type type, String msg) {
         NotifUtil.show(txtNama, type, msg);
+    }
+
+    public void generateIdPenyewa() {
+        Koneksi k = new Koneksi();
+        try {
+            String sql = "SELECT dbo.fnNextIdPenyewa() AS IdPenyewa";
+            PreparedStatement ps = k.conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                txtId.setText(rs.getString("IdPenyewa"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try { k.conn.close(); } catch (Exception ignored) {}
+        }
     }
 }

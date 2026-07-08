@@ -19,14 +19,14 @@
         </padding>
 
         <VBox alignment="CENTER" spacing="10">
-            <Label text="🏠 VillaNesia 🌸" styleClass="hero-title-text">
+            <Label text="🏠 Villa Stay 🏠" styleClass="hero-title-text">
                 <font>
-                    <Font name="System Bold" size="42"/>
+                    <Font name="System Bold" size="56"/>
                 </font>
             </Label>
-            <Label text="Pilih peran Anda untuk melanjutkan 🏖️" styleClass="hero-subtitle-text">
+            <Label text="Pilih peran Anda untuk melanjutkan" styleClass="hero-subtitle-text">
                 <font>
-                    <Font size="16"/>
+                    <Font size="22"/>
                 </font>
             </Label>
         </VBox>
@@ -54,7 +54,7 @@
             <VBox fx:id="cardPenyewa" alignment="CENTER" spacing="12" prefWidth="250" prefHeight="200"
                   styleClass="hero-card"
                   onMouseClicked="#handlePenyewa">
-                <Label text="🏖️" styleClass="hero-icon"/>
+                <Label text="👤" styleClass="hero-icon"/>
                 <Label text="Penyewa" textFill="#1565C0">
                     <font>
                         <Font name="System Bold" size="20"/>
@@ -71,7 +71,7 @@
             <VBox fx:id="cardPemilik" alignment="CENTER" spacing="12" prefWidth="250" prefHeight="200"
                   styleClass="hero-card"
                   onMouseClicked="#handlePemilik">
-                <Label text="🏠" styleClass="hero-icon"/>
+                <Label text="🏘" styleClass="hero-icon"/>
                 <Label text="Pemilik" textFill="#1565C0">
                     <font>
                         <Font name="System Bold" size="20"/>
@@ -86,9 +86,9 @@
 
         </HBox>
 
-        <Label text="🌺 © 2026 VillaNesia — Penyewaan Vila Terpercaya 🌺" styleClass="footer-text">
+        <Label text="🏠 © 2026 VillaNesia — Penyewaan Vila Terpercaya 🏠" styleClass="footer-text">
             <font>
-                <Font size="11"/>
+                <Font size="15"/>
             </font>
         </Label>
 

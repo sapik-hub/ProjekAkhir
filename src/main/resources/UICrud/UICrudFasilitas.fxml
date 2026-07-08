@@ -16,7 +16,7 @@
             <VBox spacing="12" prefWidth="280" styleClass="card">
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
 
-                <Label text="🛎️ Form Fasilitas" styleClass="brand-title">
+                <Label text="Form Fasilitas" styleClass="brand-title">
                     <font><Font name="System Bold" size="15"/></font>
                 </Label>
 

@@ -35,7 +35,6 @@ public class LoginKaryawan implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Tidak ada lagi pilihan jabatan — semua karyawan otomatis SuperAdmin
     }
 
     @FXML

@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import java.sql.PreparedStatement;
 
 import java.net.URL;
 import java.sql.CallableStatement;
@@ -255,6 +256,8 @@ public class CrudKaryawan implements Initializable {
         btnSimpan.setDisable(false);
         btnUbah.setDisable(true);
         btnHapus.setDisable(true);
+
+        generateIdKaryawan();
     }
 
     // ===========================================================
@@ -323,5 +326,21 @@ public class CrudKaryawan implements Initializable {
     // ===========================================================
     private void notif(NotifUtil.Type type, String msg) {
         NotifUtil.show(txtNama, type, msg);
+    }
+    public void generateIdKaryawan() {
+        Koneksi k = new Koneksi();
+        try {
+            String sql = "SELECT dbo.fnNextIdKaryawan() AS IdKaryawan";
+            PreparedStatement ps = k.conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                txtId.setText(rs.getString("IdKaryawan"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try { k.conn.close(); } catch (Exception ignored) {}
+        }
     }
 }
