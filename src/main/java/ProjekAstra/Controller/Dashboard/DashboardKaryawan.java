@@ -1,6 +1,7 @@
 package ProjekAstra.Controller.Dashboard;
 
 import ProjekAstra.MainApp;
+import com.dlsc.formsfx.model.structure.Element;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -17,6 +18,7 @@ public class DashboardKaryawan {
 
     @FXML private Button btnKaryawan;
     @FXML private Button btnPemilik;
+    @FXML private Button btnPenyewa;
 
     @FXML
     private void handleKaryawan() {
@@ -27,6 +29,12 @@ public class DashboardKaryawan {
     @FXML
     private void handlePemilik() {
         loadContent("/UICrud/UICrudPemilik.fxml", "Data Pemilik");
+        setActiveButton(btnPemilik);
+    }
+
+    @FXML
+    private void handlePenyewa(){
+        loadContent("/UICrud/UICrudPenyewa.fxml", "Data Penyewa");
         setActiveButton(btnPemilik);
     }
 
@@ -47,8 +55,11 @@ public class DashboardKaryawan {
     }
 
     private void setActiveButton(Button active) {
-        btnKaryawan.getStyleClass().setAll("sidebar-menu-btn");
-        btnPemilik.getStyleClass().setAll("sidebar-menu-btn");
-        active.getStyleClass().setAll("sidebar-menu-btn-active");
+        String aktif = "-fx-background-color: white; -fx-text-fill: #1565C0; -fx-background-radius: 8; -fx-font-weight: bold;";
+        String nonAktif = "-fx-background-color: transparent; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold;";
+
+        btnKaryawan.setStyle(btnKaryawan == active ? aktif : nonAktif);
+        btnPenyewa.setStyle(btnPenyewa == active ? aktif : nonAktif);
+        btnPemilik.setStyle(btnPemilik == active ? aktif : nonAktif);
     }
 }

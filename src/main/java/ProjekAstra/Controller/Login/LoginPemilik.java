@@ -2,6 +2,7 @@ package ProjekAstra.Controller.Login;
 
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.MainApp;
+import ProjekAstra.Model.Karyawan;
 import ProjekAstra.Util.NotifUtil;
 import ProjekAstra.Util.Session;
 import javafx.fxml.FXML;
@@ -26,6 +27,7 @@ public class LoginPemilik {
             return;
         }
 
+
         Koneksi k = new Koneksi();
         try {
             CallableStatement cs = k.conn.prepareCall("{call sp_LoginPemilik(?, ?)}");
@@ -34,6 +36,7 @@ public class LoginPemilik {
             ResultSet rs = cs.executeQuery();
 
             if (rs.next()) {
+
                 String id = rs.getString("Id");
                 String nama = rs.getString("Nama");
 

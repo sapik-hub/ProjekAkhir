@@ -24,9 +24,19 @@
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     styleClass="sidebar-menu-btn-active"/>
 
+            <Region prefHeight="8"/>
+
             <Button fx:id="btnPemilik" text="🏘️  Pemilik" onAction="#handlePemilik"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     styleClass="sidebar-menu-btn"/>
+
+            <Region prefHeight="8"/>
+
+
+            <Button fx:id="btnPenyewa" text="🧳  Penyewa" onAction="#handlePenyewa"
+                    prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
+                    styleClass="sidebar-menu-btn"/>
+
         </VBox>
     </left>
 
