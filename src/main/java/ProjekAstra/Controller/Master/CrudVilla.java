@@ -11,12 +11,16 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.util.Callback;
 
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class CrudVilla implements Initializable {
@@ -33,6 +37,14 @@ public class CrudVilla implements Initializable {
 
     private final ObservableList<Villa> listVilla = FXCollections.observableArrayList();
 
+    // Formatter khusus rupiah: pemisah ribuan pakai titik, tanpa desimal
+    private static final DecimalFormat RUPIAH_FORMAT;
+    static {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(new Locale("id", "ID"));
+        symbols.setGroupingSeparator('.');
+        RUPIAH_FORMAT = new DecimalFormat("#,##0", symbols);
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         cbStatus.getItems().addAll("Tersedia", "Tidak Tersedia", "Maintenance");
@@ -41,6 +53,7 @@ public class CrudVilla implements Initializable {
         loadComboKategori();
         loadTable();
         setClose();
+        setupHargaFormatter();
 
         tableVilla.setOnMouseClicked(e -> {
             Villa v = tableVilla.getSelectionModel().getSelectedItem();
@@ -59,6 +72,28 @@ public class CrudVilla implements Initializable {
         colHarga.setCellValueFactory(new PropertyValueFactory<>("harga"));
         colAlamat.setCellValueFactory(new PropertyValueFactory<>("alamatVilla"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+        setupHargaColumn(); // <-- format kolom harga di tabel
+    }
+
+    // Bikin kolom Harga di tabel tampil "Rp 10.000.000" bukan angka mentah
+    private void setupHargaColumn() {
+        colHarga.setCellFactory(new Callback<>() {
+            @Override
+            public TableCell<Villa, BigDecimal> call(TableColumn<Villa, BigDecimal> column) {
+                return new TableCell<>() {
+                    @Override
+                    protected void updateItem(BigDecimal harga, boolean empty) {
+                        super.updateItem(harga, empty);
+                        if (empty || harga == null) {
+                            setText(null);
+                        } else {
+                            setText("Rp " + RUPIAH_FORMAT.format(harga));
+                        }
+                    }
+                };
+            }
+        });
     }
 
     // ===== Combo Kategori (format: "KAT0001 - Villa Mewah") =====
@@ -133,7 +168,7 @@ public class CrudVilla implements Initializable {
             cs.setString(2, getIdFromCombo(cbKategori.getValue()));
             cs.setString(3, txtNamaVilla.getText().trim());
             cs.setInt(4, Integer.parseInt(txtKapasitas.getText().trim()));
-            cs.setBigDecimal(5, new BigDecimal(txtHarga.getText().trim()));
+            cs.setBigDecimal(5, new BigDecimal(unformatRupiah(txtHarga.getText().trim())));
             cs.setString(6, txtAlamat.getText().trim());
             cs.setString(7, cbStatus.getValue());
             cs.execute();
@@ -167,7 +202,7 @@ public class CrudVilla implements Initializable {
             cs.setString(2, getIdFromCombo(cbKategori.getValue()));
             cs.setString(3, txtNamaVilla.getText().trim());
             cs.setInt(4, Integer.parseInt(txtKapasitas.getText().trim()));
-            cs.setBigDecimal(5, new BigDecimal(txtHarga.getText().trim()));
+            cs.setBigDecimal(5, new BigDecimal(unformatRupiah(txtHarga.getText().trim())));
             cs.setString(6, txtAlamat.getText().trim());
             cs.setString(7, cbStatus.getValue());
             cs.execute();
@@ -224,7 +259,7 @@ public class CrudVilla implements Initializable {
         txtId.setText(v.getIdVilla());
         txtNamaVilla.setText(v.getNamaVilla());
         txtKapasitas.setText(String.valueOf(v.getKapasitas()));
-        txtHarga.setText(v.getHarga().toPlainString());
+        txtHarga.setText(formatRupiah(v.getHarga().toBigInteger().toString()));
         txtAlamat.setText(v.getAlamatVilla());
         cbStatus.setValue(v.getStatus());
 
@@ -269,6 +304,49 @@ public class CrudVilla implements Initializable {
         generateIdVilla();
     }
 
+    // ===========================================================
+    // FORMAT HARGA (kayak kalkulator, titik ribuan otomatis)
+    // ===========================================================
+    private void setupHargaFormatter() {
+        txtHarga.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal.equals(oldVal)) return;
+
+            String digitsOnly = unformatRupiah(newVal);
+            String formatted = formatRupiah(digitsOnly);
+
+            if (!formatted.equals(newVal)) {
+                txtHarga.setText(formatted);
+                txtHarga.positionCaret(formatted.length());
+            }
+        });
+    }
+
+    // Format "10000000" -> "10.000.000"
+    private String formatRupiah(String digitsOnly) {
+        if (digitsOnly == null || digitsOnly.isEmpty()) return "";
+        digitsOnly = digitsOnly.replaceFirst("^0+(?!$)", ""); // hilangkan leading zero
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        for (int i = digitsOnly.length() - 1; i >= 0; i--) {
+            sb.insert(0, digitsOnly.charAt(i));
+            count++;
+            if (count % 3 == 0 && i != 0) sb.insert(0, '.');
+        }
+        return sb.toString();
+    }
+
+    // Balikin "10.000.000" -> "10000000"
+    private String unformatRupiah(String formatted) {
+        return formatted == null ? "" : formatted.replaceAll("[^0-9]", "");
+    }
+
+    // ===========================================================
+    // VALIDASI
+    // ===========================================================
+    // - NamaVilla : wajib diisi, tidak boleh mengandung angka
+    // - Kapasitas : wajib diisi, hanya boleh angka (tidak boleh huruf/simbol)
+    // - Harga     : wajib diisi, hanya boleh angka/desimal (titik ribuan diabaikan)
+    // - Alamat    : wajib diisi, tidak boleh angka, tidak boleh simbol seperti @#$%^&*!
     private boolean validasiInsert() {
         if (cbKategori.getValue() == null ||
                 txtNamaVilla.getText().trim().isEmpty() || txtKapasitas.getText().trim().isEmpty() ||
@@ -277,11 +355,45 @@ public class CrudVilla implements Initializable {
             notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return false;
         }
-        return true;
+        return validasiFormat();
     }
 
     private boolean validasiUpdate() {
         return validasiInsert();
+    }
+
+    // Validasi format field yang sama-sama dipakai insert & update
+    private boolean validasiFormat() {
+        String namaVilla = txtNamaVilla.getText().trim();
+        String kapasitas = txtKapasitas.getText().trim();
+        String harga = unformatRupiah(txtHarga.getText().trim());
+        String alamat = txtAlamat.getText().trim();
+
+        // Nama Villa: tidak boleh mengandung angka
+        if (!namaVilla.matches("^[^0-9]+$")) {
+            notif(NotifUtil.Type.WARNING, "Nama Villa tidak boleh mengandung angka!");
+            return false;
+        }
+
+        // Kapasitas: hanya angka, tidak boleh huruf/simbol
+        if (!kapasitas.matches("^[0-9]+$")) {
+            notif(NotifUtil.Type.WARNING, "Kapasitas harus berupa angka dan tidak boleh mengandung huruf!");
+            return false;
+        }
+
+        // Harga: hanya angka (titik ribuan sudah dihilangkan sebelum dicek)
+        if (harga.isEmpty() || !harga.matches("^[0-9]+$")) {
+            notif(NotifUtil.Type.WARNING, "Harga harus berupa angka dan tidak boleh mengandung huruf!");
+            return false;
+        }
+
+        // Alamat: tidak boleh angka dan tidak boleh simbol seperti @#$%^&*!
+        if (!alamat.matches("^[a-zA-Z\\s]+$")) {
+            notif(NotifUtil.Type.WARNING, "Alamat tidak boleh mengandung angka atau simbol!");
+            return false;
+        }
+
+        return true;
     }
 
     private void notif(NotifUtil.Type type, String msg) {

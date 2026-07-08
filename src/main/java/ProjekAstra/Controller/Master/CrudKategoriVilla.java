@@ -193,11 +193,30 @@ public class CrudKategoriVilla implements Initializable {
         generateIdVilla();
     }
 
+    // ===== VALIDASI =====
+    // - Nama Kategori : wajib diisi, tidak boleh mengandung angka
+    // - Deskripsi     : opsional, kalau diisi tidak boleh mengandung angka
     private boolean validasi() {
         if (txtNamaKategori.getText().trim().isEmpty()) {
             notif(NotifUtil.Type.WARNING, "Nama kategori wajib diisi!");
             return false;
         }
+
+        String nama = txtNamaKategori.getText().trim();
+        String deskripsi = txtDeskripsi.getText().trim();
+
+        // Nama Kategori: tidak boleh mengandung angka
+        if (!nama.matches("^[^0-9]+$")) {
+            notif(NotifUtil.Type.WARNING, "Nama Kategori tidak boleh mengandung angka!");
+            return false;
+        }
+
+        // Deskripsi: kalau diisi, tidak boleh mengandung angka
+        if (!deskripsi.isEmpty() && !deskripsi.matches("^[^0-9]+$")) {
+            notif(NotifUtil.Type.WARNING, "Deskripsi tidak boleh mengandung angka!");
+            return false;
+        }
+
         return true;
     }
 

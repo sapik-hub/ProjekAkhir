@@ -236,6 +236,10 @@ public class CrudPemilik implements Initializable {
     // ===========================================================
     // VALIDASI
     // ===========================================================
+    // - Nama    : wajib diisi, tidak boleh angka, tidak boleh simbol (huruf & spasi saja)
+    // - NoTelp  : wajib diisi, hanya boleh angka (tidak boleh huruf/simbol)
+    // - Email   : wajib diisi, harus berformat email yang valid
+    // - Alamat  : wajib diisi, tidak boleh angka, tidak boleh simbol seperti @#$%^&*!
     private boolean validasiInsert() {
         if (txtNama.getText().trim().isEmpty() || txtNoTelp.getText().trim().isEmpty() ||
                 txtEmail.getText().trim().isEmpty() || txtAlamat.getText().trim().isEmpty() ||
@@ -243,7 +247,7 @@ public class CrudPemilik implements Initializable {
             notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return false;
         }
-        return true;
+        return validasiFormat();
     }
 
     private boolean validasiUpdate() {
@@ -252,6 +256,40 @@ public class CrudPemilik implements Initializable {
             notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return false;
         }
+        return validasiFormat();
+    }
+
+    // Validasi format field yang sama-sama dipakai insert & update
+    private boolean validasiFormat() {
+        String nama = txtNama.getText().trim();
+        String noTelp = txtNoTelp.getText().trim();
+        String email = txtEmail.getText().trim();
+        String alamat = txtAlamat.getText().trim();
+
+        // Nama: hanya huruf dan spasi, tidak boleh angka/simbol
+        if (!nama.matches("^[a-zA-Z\\s]+$")) {
+            notif(NotifUtil.Type.WARNING, "Nama tidak boleh mengandung angka atau simbol!");
+            return false;
+        }
+
+        // No Telp: hanya angka, tidak boleh huruf/simbol
+        if (!noTelp.matches("^[0-9]+$")) {
+            notif(NotifUtil.Type.WARNING, "No Telp hanya boleh berisi angka!");
+            return false;
+        }
+
+        // Email: harus berformat email yang valid
+        if (!email.matches("^[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}$")) {
+            notif(NotifUtil.Type.WARNING, "Format email tidak valid!");
+            return false;
+        }
+
+        // Alamat: tidak boleh angka dan tidak boleh simbol seperti @#$%^&*!
+        if (!alamat.matches("^[a-zA-Z\\s]+$")) {
+            notif(NotifUtil.Type.WARNING, "Alamat tidak boleh mengandung angka atau simbol!");
+            return false;
+        }
+
         return true;
     }
 

@@ -12,7 +12,7 @@ public class Tampilan {
 
     @FXML
     private void handlePenyewa() {
-        MainApp.switchScene("/UILogin/UILoginPenyewa.fxml");
+        MainApp.switchScene("/UIDashboard/UIDashboardPenyewa.fxml");
     }
 
     @FXML

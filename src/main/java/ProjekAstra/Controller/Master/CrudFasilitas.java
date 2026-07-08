@@ -246,12 +246,39 @@ public class CrudFasilitas implements Initializable {
         generateIdVilla();
     }
 
+    // ===== VALIDASI =====
+    // - Nama Fasilitas : wajib diisi, tidak boleh mengandung angka
+    // - Jumlah         : wajib diisi, harus angka penuh (tidak boleh mengandung huruf/simbol)
+    // - Deskripsi      : opsional, kalau diisi tidak boleh mengandung angka
     private boolean validasi() {
         if (cbVilla.getValue() == null || txtNamaFasilitas.getText().trim().isEmpty() ||
                 txtJumlah.getText().trim().isEmpty()) {
             notif(NotifUtil.Type.WARNING, "Villa, Nama Fasilitas, dan Jumlah wajib diisi!");
             return false;
         }
+
+        String nama = txtNamaFasilitas.getText().trim();
+        String jumlah = txtJumlah.getText().trim();
+        String deskripsi = txtDeskripsi.getText().trim();
+
+        // Nama Fasilitas: tidak boleh mengandung angka
+        if (!nama.matches("^[^0-9]+$")) {
+            notif(NotifUtil.Type.WARNING, "Nama Fasilitas tidak boleh mengandung angka!");
+            return false;
+        }
+
+        // Jumlah: harus angka penuh, tidak boleh ada huruf/karakter lain
+        if (!jumlah.matches("^[0-9]+$")) {
+            notif(NotifUtil.Type.WARNING, "Jumlah harus berupa angka dan tidak boleh mengandung huruf!");
+            return false;
+        }
+
+        // Deskripsi: kalau diisi, tidak boleh mengandung angka
+        if (!deskripsi.isEmpty() && !deskripsi.matches("^[^0-9]+$")) {
+            notif(NotifUtil.Type.WARNING, "Deskripsi tidak boleh mengandung angka!");
+            return false;
+        }
+
         return true;
     }
 
