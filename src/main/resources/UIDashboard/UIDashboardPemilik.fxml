@@ -32,7 +32,7 @@
 
             <Region prefHeight="8"/>
 
-            <Button fx:id="btnFasilitas" text="Fasilitas" onAction="#handleFasilitas"
+            <Button fx:id="btnFasilitas" text="Fasilitas ⭐" onAction="#handleFasilitas"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     styleClass="sidebar-menu-btn"/>
         </VBox>

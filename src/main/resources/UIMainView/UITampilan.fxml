@@ -24,9 +24,9 @@
                     <Font name="System Bold" size="56"/>
                 </font>
             </Label>
-            <Label text="Pilih peran Anda untuk melanjutkan" styleClass="hero-subtitle-text">
+            <Label text="Pilih peran Anda untuk melanjutkan" styleClass="footer-text">
                 <font>
-                    <Font size="22"/>
+                    <Font size="20"/>
                 </font>
             </Label>
         </VBox>
@@ -86,7 +86,7 @@
 
         </HBox>
 
-        <Label text="🏠 © 2026 VillaNesia — Penyewaan Vila Terpercaya 🏠" styleClass="footer-text">
+        <Label text="🏠 © 2026 Villa Stay — Penyewaan Vila Terpercaya 🏠" styleClass="footer-text">
             <font>
                 <Font size="15"/>
             </font>

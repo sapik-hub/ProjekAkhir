@@ -22,6 +22,8 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import javafx.geometry.Pos;
+import javafx.scene.control.TableCell;
 
 public class CrudVilla implements Initializable {
 
@@ -44,6 +46,8 @@ public class CrudVilla implements Initializable {
         symbols.setGroupingSeparator('.');
         RUPIAH_FORMAT = new DecimalFormat("#,##0", symbols);
     }
+
+
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {

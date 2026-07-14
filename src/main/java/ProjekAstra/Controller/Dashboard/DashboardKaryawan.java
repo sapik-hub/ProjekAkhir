@@ -21,6 +21,11 @@ public class DashboardKaryawan {
     @FXML private Button btnPenyewa;
 
     @FXML
+    public void initialize() {
+        handleKaryawan();
+    }
+
+    @FXML
     private void handleKaryawan() {
         loadContent("/UICrud/UICrudKaryawan.fxml", "Data Karyawan");
         setActiveButton(btnKaryawan);
@@ -35,7 +40,7 @@ public class DashboardKaryawan {
     @FXML
     private void handlePenyewa(){
         loadContent("/UICrud/UICrudPenyewa.fxml", "Data Penyewa");
-        setActiveButton(btnPemilik);
+        setActiveButton(btnPenyewa);
     }
 
     @FXML
@@ -62,4 +67,5 @@ public class DashboardKaryawan {
         btnPenyewa.setStyle(btnPenyewa == active ? aktif : nonAktif);
         btnPemilik.setStyle(btnPemilik == active ? aktif : nonAktif);
     }
+
 }

@@ -209,3 +209,157 @@
 .card {
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 24, 0, 0, 10);
 }
+.kiosk-main {
+    -fx-background-color: transparent;
+}
+
+.search-bar {
+    -fx-background-color: rgba(255,255,255,0.06);
+    -fx-background-radius: 30;
+    -fx-padding: 8 12 8 12;
+}
+
+.search-field {
+    -fx-background-radius: 20;
+    -fx-background-color: #FBF3E1;
+    -fx-padding: 8 15 8 15;
+}
+
+.btn-search {
+    -fx-background-color: #E3B23C;
+    -fx-text-fill: #3B2A20;
+    -fx-font-weight: bold;
+    -fx-background-radius: 20;
+    -fx-padding: 8 18 8 18;
+    -fx-cursor: hand;
+}
+
+.btn-reset {
+    -fx-background-color: transparent;
+    -fx-text-fill: #E8C468;
+    -fx-border-color: #E8C468;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+    -fx-padding: 8 16 8 16;
+    -fx-cursor: hand;
+}
+
+.bubble-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.bubble-flow {
+    -fx-background-color: transparent;
+}
+
+.villa-card {
+    -fx-background-color: #4A3728;
+    -fx-background-radius: 18;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 12, 0.15, 0, 5);
+}
+.villa-card:hover {
+    -fx-background-color: #55402E;
+    -fx-scale-x: 1.03;
+    -fx-scale-y: 1.03;
+}
+.villa-card .card-image-placeholder {
+    -fx-background-color: linear-gradient(to bottom, #E8DFC8, #D8CBA8);
+    -fx-background-radius: 18 18 0 0;
+}
+.villa-card .card-nama {
+    -fx-text-fill: #FBF3E1;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-alignment: center;
+    -fx-padding: 8 10 0 10;
+}
+.villa-card .card-kapasitas {
+    -fx-text-fill: #E3B23C;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.bubble-empty {
+    -fx-text-fill: #d8c9b0;
+    -fx-font-size: 14px;
+}
+
+.overlay-dim {
+    -fx-background-color: rgba(20, 14, 10, 0.72);
+}
+
+.detail-bubble {
+    -fx-background-color: #FBF3E1;
+    -fx-background-radius: 40;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 25, 0.3, 0, 10);
+}
+
+.detail-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #3B2A20;
+}
+
+.detail-sub {
+    -fx-font-size: 14px;
+    -fx-text-fill: #5a4736;
+}
+
+.detail-harga {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8B3A2F;
+}
+
+.detail-label-kecil {
+    -fx-font-size: 12px;
+    -fx-text-fill: #8a7960;
+}
+
+.detail-desc {
+    -fx-font-size: 13px;
+    -fx-text-fill: #3B2A20;
+}
+
+.btn-kembali {
+    -fx-background-color: transparent;
+    -fx-border-color: #8B3A2F;
+    -fx-border-radius: 25;
+    -fx-background-radius: 25;
+    -fx-text-fill: #8B3A2F;
+    -fx-font-weight: bold;
+    -fx-padding: 10 0 10 0;
+    -fx-cursor: hand;
+}
+
+.btn-booking {
+    -fx-background-color: #E3B23C;
+    -fx-text-fill: #3B2A20;
+    -fx-font-weight: bold;
+    -fx-background-radius: 25;
+    -fx-padding: 10 0 10 0;
+    -fx-cursor: hand;
+}
+.detail-status-badge {
+    -fx-background-color: #C8E6C9;
+    -fx-text-fill: #2E7D32;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 4 14 4 14;
+    -fx-background-radius: 20;
+}
+.fasilitas-flow {
+    -fx-background-color: transparent;
+}
+
+.fasilitas-chip {
+    -fx-background-color: #E3B23C;
+    -fx-background-radius: 14;
+    -fx-padding: 4 12 4 12;
+    -fx-font-size: 12px;
+    -fx-text-fill: #3B2A20;
+    -fx-font-weight: bold;
+}

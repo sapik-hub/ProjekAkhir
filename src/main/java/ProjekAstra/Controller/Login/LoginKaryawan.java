@@ -86,7 +86,7 @@ public class LoginKaryawan implements Initializable {
             if (rs.next()) {
                 String nama = rs.getString("NamaKaryawan");
                 NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
-                        "Login berhasil! Selamat datang, " + nama + " 🌸",
+                        ("Login berhasil! Selamat datang, " + nama + "👤"),
                         () -> MainApp.switchScene("/UIDashboard/UIDashboardKaryawan.fxml"));
             } else {
                 notifLogin(NotifUtil.Type.ERROR, "Username/Password salah atau akun tidak aktif!");

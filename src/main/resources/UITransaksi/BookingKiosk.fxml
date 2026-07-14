@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="ProjekAstra.Controller.Transaksi.BookingKiosk"
+            prefHeight="600.0" prefWidth="500.0">
+
+    <VBox spacing="12" AnchorPane.topAnchor="20" AnchorPane.leftAnchor="40" AnchorPane.rightAnchor="40">
+        <Label text="Form Booking Villa" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+        <Label fx:id="lblVillaTerpilih" style="-fx-font-size: 14; -fx-text-fill: #777;"/>
+
+        <Label text="Nama Lengkap"/>
+        <TextField fx:id="txtNama"/>
+
+        <Label text="No. Telepon"/>
+        <TextField fx:id="txtNoTelp"/>
+
+        <Label text="Alamat"/>
+        <TextArea fx:id="txtAlamat" prefHeight="60"/>
+
+        <Label text="Tanggal Check-In"/>
+        <DatePicker fx:id="dpCheckin" prefWidth="300"/>
+
+        <Label text="Tanggal Check-Out"/>
+        <DatePicker fx:id="dpCheckout" prefWidth="300"/>
+
+        <Label text="Jumlah Tamu"/>
+        <TextField fx:id="txtJumlahTamu"/>
+
+        <Label text="Catatan (opsional)"/>
+        <TextArea fx:id="txtCatatan" prefHeight="50"/>
+
+        <Label fx:id="lblGrandHarga" style="-fx-font-size: 16; -fx-font-weight: bold;"/>
+
+        <HBox spacing="10">
+            <Button fx:id="btnKembali" text="Kembali" onAction="#handleKembali"/>
+            <Button fx:id="btnBooking" text="Booking Sekarang" onAction="#handleBookingSekarang"/>
+        </HBox>
+    </VBox>
+
+</AnchorPane>

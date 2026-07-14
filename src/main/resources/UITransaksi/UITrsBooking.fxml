@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="ProjekAstra.Controller.Transaksi.Booking"
+            prefHeight="700.0" prefWidth="1200.0">
+
+    <HBox spacing="15" AnchorPane.topAnchor="10" AnchorPane.bottomAnchor="60"
+          AnchorPane.leftAnchor="10" AnchorPane.rightAnchor="10">
+
+        <!-- FORM KIRI -->
+        <VBox spacing="8" prefWidth="320">
+            <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+            <Label text="Form Transaksi Booking" style="-fx-font-size: 16; -fx-font-weight: bold;"/>
+
+            <Label text="Id Booking"/>
+            <TextField fx:id="txtId" editable="false"/>
+
+            <Label text="Penyewa"/>
+            <ComboBox fx:id="cbPenyewa" prefWidth="300"/>
+
+            <Label text="Villa"/>
+            <ComboBox fx:id="cbVilla" prefWidth="300"/>
+
+            <Label text="Tanggal Check-In"/>
+            <DatePicker fx:id="dpCheckin" prefWidth="300"/>
+
+            <Label text="Tanggal Check-Out"/>
+            <DatePicker fx:id="dpCheckout" prefWidth="300"/>
+
+            <Label text="Jumlah Tamu"/>
+            <TextField fx:id="txtJumlahTamu"/>
+
+            <Label text="Grand Harga"/>
+            <TextField fx:id="txtGrandHarga" editable="false"/>
+
+            <Label text="Catatan Penyewa"/>
+            <TextArea fx:id="txtCatatan" prefHeight="60"/>
+
+            <Label text="Status Booking"/>
+            <ComboBox fx:id="cbStatus" prefWidth="300"/>
+
+            <Label text="Cari Booking"/>
+            <TextField fx:id="txtCari" promptText="Cari nama penyewa / id booking..."/>
+        </VBox>
+
+        <!-- TABEL KANAN -->
+        <TableView fx:id="tableBooking" HBox.hgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colId" text="Id Booking" prefWidth="90"/>
+                <TableColumn fx:id="colPenyewa" text="Penyewa" prefWidth="130"/>
+                <TableColumn fx:id="colVilla" text="Villa" prefWidth="130"/>
+                <TableColumn fx:id="colCheckin" text="Check-In" prefWidth="90"/>
+                <TableColumn fx:id="colCheckout" text="Check-Out" prefWidth="90"/>
+                <TableColumn fx:id="colTamu" text="Jumlah Tamu" prefWidth="90"/>
+                <TableColumn fx:id="colHarga" text="Grand Harga" prefWidth="110"/>
+                <TableColumn fx:id="colStatus" text="Status" prefWidth="130"/>
+            </columns>
+        </TableView>
+    </HBox>
+
+    <!-- TOMBOL BAWAH -->
+    <HBox spacing="10" AnchorPane.bottomAnchor="10" AnchorPane.leftAnchor="10">
+        <Button fx:id="btnSimpan" text="Simpan" onAction="#handleSimpan"/>
+        <Button fx:id="btnUbah" text="Ubah" onAction="#handleUbah"/>
+        <Button fx:id="btnHapus" text="Batalkan" onAction="#handleHapus"/>
+        <Button fx:id="btnReset" text="Reset" onAction="#handleReset"/>
+        <Button fx:id="btnCetak" text="Cetak Struk" onAction="#handleCetakStruk"/>
+    </HBox>
+
+</AnchorPane>
