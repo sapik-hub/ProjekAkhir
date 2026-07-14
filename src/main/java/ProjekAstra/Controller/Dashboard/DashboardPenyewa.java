@@ -255,8 +255,10 @@ public class DashboardPenyewa {
             stage.getScene().setRoot(root);
 
         } catch (Exception e) {
+            e.printStackTrace(); // <-- tambahkan ini
             NotifUtil.show(detailBubble, NotifUtil.Type.ERROR, "Gagal membuka halaman booking: " + e.getMessage());
         }
+
     }
 
     @FXML
