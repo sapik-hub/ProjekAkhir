@@ -289,7 +289,7 @@ public class CrudFasilitas implements Initializable {
     public void generateIdVilla() {
         Koneksi k = new Koneksi();
         try {
-            String sql = "SELECT dbo.fnNextIdFasilitas() AS IdFasilitas";
+            String sql = "SELECT fnNextIdFasilitas() AS IdFasilitas";
             PreparedStatement ps = k.conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
