@@ -10,7 +10,7 @@ public class Villa {
 
     public Villa(String idVilla, String namaPemilik, String namaKategori, String namaVilla,
                  int kapasitas, BigDecimal hargaWeekday, BigDecimal hargaWeekend,
-                 String alamatVilla, String foto, String status) {
+                 String alamatVilla, String foto, String Status) {
         this.idVilla = idVilla;
         this.namaPemilik = namaPemilik;
         this.namaKategori = namaKategori;
@@ -20,7 +20,7 @@ public class Villa {
         this.hargaWeekend = hargaWeekend;
         this.alamatVilla = alamatVilla;
         this.foto = foto;
-        this.status = status;
+        this.status = Status;
     }
 
     public String getIdVilla() { return idVilla; }

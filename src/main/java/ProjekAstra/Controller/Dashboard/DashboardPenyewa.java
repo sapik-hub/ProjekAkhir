@@ -471,7 +471,7 @@ public class DashboardPenyewa {
         } catch (NumberFormatException e) {
             NotifUtil.show(txtJumlahTamu, NotifUtil.Type.WARNING, "Jumlah tamu harus berupa angka!");
         } catch (Exception e) {
-            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.ERROR, "Gagal booking: " + e.getMessage());
+            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.ERROR, "Gagal bookingg: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
