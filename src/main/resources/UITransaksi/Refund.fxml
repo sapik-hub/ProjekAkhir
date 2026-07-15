@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="ProjekAstra.Controller.Transaksi.Refund"
+            prefHeight="700.0"
+            prefWidth="1200.0">
+
+    <HBox spacing="15"
+          AnchorPane.topAnchor="10"
+          AnchorPane.bottomAnchor="60"
+          AnchorPane.leftAnchor="10"
+          AnchorPane.rightAnchor="10">
+
+        <!-- FORM -->
+
+        <VBox spacing="8" prefWidth="330">
+
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <Label text="Form Transaksi Refund"
+                   style="-fx-font-size:16;-fx-font-weight:bold;"/>
+
+            <Label text="ID Refund"/>
+            <TextField fx:id="txtId" editable="false"/>
+
+            <Label text="Booking"/>
+            <ComboBox fx:id="cbBooking" prefWidth="300"/>
+
+            <Label text="Karyawan"/>
+            <ComboBox fx:id="cbKaryawan" prefWidth="300"/>
+
+            <Label text="Alasan Refund"/>
+            <TextArea fx:id="txtAlasan" prefHeight="70"/>
+
+            <Label text="Jumlah Refund"/>
+            <TextField fx:id="txtJumlahRefund"/>
+
+            <Label text="Tanggal Pengajuan"/>
+            <DatePicker fx:id="dpPengajuan"/>
+
+            <Label text="Tanggal Refund"/>
+            <DatePicker fx:id="dpRefund"/>
+
+            <Label text="Deskripsi"/>
+            <TextArea fx:id="txtDeskripsi" prefHeight="70"/>
+
+            <Label text="Status Refund"/>
+            <ComboBox fx:id="cbStatus"/>
+
+            <Label text="Cari Refund"/>
+            <TextField fx:id="txtCari"
+                       promptText="Cari ID Refund / Booking..."/>
+
+        </VBox>
+
+        <!-- TABLE -->
+
+        <TableView fx:id="tableRefund"
+                   HBox.hgrow="ALWAYS">
+
+            <columns>
+
+                <TableColumn fx:id="colId"
+                             text="ID Refund"
+                             prefWidth="110"/>
+
+                <TableColumn fx:id="colBooking"
+                             text="Booking"
+                             prefWidth="110"/>
+
+                <TableColumn fx:id="colKaryawan"
+                             text="Karyawan"
+                             prefWidth="140"/>
+
+                <TableColumn fx:id="colJumlah"
+                             text="Jumlah"
+                             prefWidth="100"/>
+
+                <TableColumn fx:id="colPengajuan"
+                             text="Pengajuan"
+                             prefWidth="110"/>
+
+                <TableColumn fx:id="colRefund"
+                             text="Refund"
+                             prefWidth="110"/>
+
+                <TableColumn fx:id="colStatus"
+                             text="Status"
+                             prefWidth="140"/>
+
+            </columns>
+
+        </TableView>
+
+    </HBox>
+
+    <HBox spacing="10"
+          AnchorPane.leftAnchor="10"
+          AnchorPane.bottomAnchor="10">
+
+        <Button fx:id="btnSimpan"
+                text="Simpan"
+                onAction="#handleSimpan"/>
+
+        <Button fx:id="btnUbah"
+                text="Ubah"
+                onAction="#handleUbah"/>
+
+        <Button fx:id="btnHapus"
+                text="Batalkan"
+                onAction="#handleHapus"/>
+
+        <Button fx:id="btnReset"
+                text="Reset"
+                onAction="#handleReset"/>
+
+        <Button fx:id="btnCetak"
+                text="Cetak Struk"
+                onAction="#handleCetakStruk"/>
+
+    </HBox>
+
+</AnchorPane>
