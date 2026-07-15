@@ -2,6 +2,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.text.Font?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
@@ -28,9 +29,16 @@
                 <ComboBox fx:id="cbKategori" promptText="Pilih Kategori" maxWidth="Infinity" styleClass="input-field"/>
                 <TextField fx:id="txtNamaVilla" promptText="Nama Villa" styleClass="input-field"/>
                 <TextField fx:id="txtKapasitas" promptText="Kapasitas (orang)" styleClass="input-field"/>
-                <TextField fx:id="txtHarga" promptText="Harga per malam" styleClass="input-field"/>
+                <TextField fx:id="txtHargaWeekday" promptText="Harga Weekday (Minggu-Kamis)" styleClass="input-field"/>
+                <TextField fx:id="txtHargaWeekend" promptText="Harga Weekend (otomatis x1.5)" editable="false" styleClass="input-field"/>
                 <TextField fx:id="txtAlamat" promptText="Alamat Villa" styleClass="input-field"/>
                 <ComboBox fx:id="cbStatus" promptText="Status" maxWidth="Infinity" styleClass="input-field"/>
+
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <ImageView fx:id="imgPreview" fitWidth="60" fitHeight="60" preserveRatio="true"/>
+                    <Button fx:id="btnPilihFoto" text="Pilih Foto" onAction="#handlePilihFoto"
+                            styleClass="btn-neutral"/>
+                </HBox>
 
                 <Region VBox.vgrow="ALWAYS"/>
                 <TextField fx:id="txtCari" promptText="🔍 Cari villa..." styleClass="input-field"/>
@@ -42,12 +50,13 @@
                 <TableView fx:id="tableVilla" VBox.vgrow="ALWAYS">
                     <columns>
                         <TableColumn fx:id="colId" text="ID Villa" prefWidth="90"/>
-                        <TableColumn fx:id="colPemilik" text="Pemilik" prefWidth="130"/>
-                        <TableColumn fx:id="colKategori" text="Kategori" prefWidth="110"/>
-                        <TableColumn fx:id="colNamaVilla" text="Nama Villa" prefWidth="150"/>
-                        <TableColumn fx:id="colKapasitas" text="Kapasitas" prefWidth="80"/>
-                        <TableColumn fx:id="colHarga" text="Harga" prefWidth="100"/>
-                        <TableColumn fx:id="colAlamat" text="Alamat" prefWidth="160"/>
+                        <TableColumn fx:id="colPemilik" text="Pemilik" prefWidth="110"/>
+                        <TableColumn fx:id="colKategori" text="Kategori" prefWidth="100"/>
+                        <TableColumn fx:id="colNamaVilla" text="Nama Villa" prefWidth="130"/>
+                        <TableColumn fx:id="colKapasitas" text="Kapasitas" prefWidth="70"/>
+                        <TableColumn fx:id="colHargaWeekday" text="Harga Weekday" prefWidth="110"/>
+                        <TableColumn fx:id="colHargaWeekend" text="Harga Weekend" prefWidth="110"/>
+                        <TableColumn fx:id="colAlamat" text="Alamat" prefWidth="140"/>
                         <TableColumn fx:id="colStatus" text="Status" prefWidth="90"/>
                     </columns>
                 </TableView>

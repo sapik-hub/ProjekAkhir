@@ -3,19 +3,23 @@ package ProjekAstra.Model;
 import java.math.BigDecimal;
 
 public class Villa {
-    private String idVilla, namaPemilik, namaKategori, namaVilla, alamatVilla, status;
+    private String idVilla, namaPemilik, namaKategori, namaVilla, alamatVilla, foto, status;
     private int kapasitas;
-    private BigDecimal harga;
+    private BigDecimal hargaWeekday;
+    private BigDecimal hargaWeekend;
 
     public Villa(String idVilla, String namaPemilik, String namaKategori, String namaVilla,
-                 int kapasitas, BigDecimal harga, String alamatVilla, String status) {
+                 int kapasitas, BigDecimal hargaWeekday, BigDecimal hargaWeekend,
+                 String alamatVilla, String foto, String status) {
         this.idVilla = idVilla;
         this.namaPemilik = namaPemilik;
         this.namaKategori = namaKategori;
         this.namaVilla = namaVilla;
         this.kapasitas = kapasitas;
-        this.harga = harga;
+        this.hargaWeekday = hargaWeekday;
+        this.hargaWeekend = hargaWeekend;
         this.alamatVilla = alamatVilla;
+        this.foto = foto;
         this.status = status;
     }
 
@@ -24,7 +28,9 @@ public class Villa {
     public String getNamaKategori() { return namaKategori; }
     public String getNamaVilla() { return namaVilla; }
     public int getKapasitas() { return kapasitas; }
-    public BigDecimal getHarga() { return harga; }
+    public BigDecimal getHargaWeekday() { return hargaWeekday; }
+    public BigDecimal getHargaWeekend() { return hargaWeekend; }
     public String getAlamatVilla() { return alamatVilla; }
+    public String getFoto() { return foto; }
     public String getStatus() { return status; }
 }

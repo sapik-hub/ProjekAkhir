@@ -5,6 +5,7 @@ import ProjekAstra.Model.Villa;
 import ProjekAstra.Model.Fasilitas;
 import ProjekAstra.Model.Penyewa;
 import ProjekAstra.Koneksi.Koneksi;
+import ProjekAstra.Util.FileUtil;
 import ProjekAstra.Util.NotifUtil;
 
 import javafx.animation.FadeTransition;
@@ -20,6 +21,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -27,11 +30,12 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import javafx.util.StringConverter;
 
+import java.io.File;
+import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.Types;
 import java.text.NumberFormat;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -52,15 +56,18 @@ public class DashboardPenyewa {
     @FXML private Label lblDetailNama;
     @FXML private Label lblDetailKategori;
     @FXML private Label lblDetailKapasitas;
-    @FXML private Label lblDetailHarga;
+    @FXML private Label lblDetailHargaWeekday;
+    @FXML private Label lblDetailHargaWeekend;
     @FXML private Label lblDetailAlamat;
     @FXML private Label lblDetailPemilik;
+    @FXML private ImageView imgDetailFoto;
     @FXML private FlowPane fasilitasContainer;
 
     // ---- booking bubble (sudah inline, bukan fx:include lagi) ----
     @FXML private VBox bookingPane;
     @FXML private Label lblVillaTerpilih;
     @FXML private ComboBox<Penyewa> cbPenyewa;
+    @FXML private ComboBox<String> cbMetodePembayaran;
     @FXML private TextArea txtAlamatBooking;
     @FXML private TextArea txtCatatan;
     @FXML private DatePicker dpCheckin;
@@ -86,6 +93,7 @@ public class DashboardPenyewa {
 
         muatDaftarPenyewa();
         setupComboPenyewa();
+        setupComboMetodePembayaran();
 
         dpCheckin.valueProperty().addListener((o, old, val) -> hitungGrandHarga());
         dpCheckout.valueProperty().addListener((o, old, val) -> hitungGrandHarga());
@@ -114,6 +122,10 @@ public class DashboardPenyewa {
         });
     }
 
+    private void setupComboMetodePembayaran() {
+        cbMetodePembayaran.getItems().setAll("Cash", "Transfer Bank", "QRIS");
+    }
+
     // ====== ambil semua villa dari database ======
     private void muatDaftarVilla() {
         daftarVilla.clear();
@@ -129,8 +141,10 @@ public class DashboardPenyewa {
                         rs.getString("NamaKategori"),
                         rs.getString("NamaVilla"),
                         rs.getInt("Kapasitas"),
-                        rs.getBigDecimal("Harga"),
+                        rs.getBigDecimal("HargaWeekday"),
+                        rs.getBigDecimal("HargaWeekend"),
                         rs.getString("AlamatVilla"),
+                        rs.getString("Foto"),
                         rs.getString("Status")
                 ));
             }
@@ -224,11 +238,7 @@ public class DashboardPenyewa {
     }
 
     private Button buatBubble(Villa v) {
-        Region placeholderFoto = new Region();
-        placeholderFoto.getStyleClass().add("card-image-placeholder");
-        placeholderFoto.setPrefSize(230, 190);
-        placeholderFoto.setMinSize(230, 190);
-        placeholderFoto.setMaxSize(230, 190);
+        Node fotoNode = buatFotoNode(v.getFoto(), 230, 190);
 
         Label lblNama = new Label(v.getNamaVilla());
         lblNama.getStyleClass().add("card-nama");
@@ -238,7 +248,10 @@ public class DashboardPenyewa {
         Label lblKapasitas = new Label("👥 " + v.getKapasitas() + " orang");
         lblKapasitas.getStyleClass().add("card-kapasitas");
 
-        VBox isiCard = new VBox(8, placeholderFoto, lblNama, lblKapasitas);
+        Label lblHarga = new Label(RUPIAH.format(v.getHargaWeekday()) + " / malam (weekday)");
+        lblHarga.getStyleClass().add("card-kapasitas");
+
+        VBox isiCard = new VBox(8, fotoNode, lblNama, lblKapasitas, lblHarga);
         isiCard.setAlignment(Pos.CENTER);
         isiCard.setPadding(new Insets(0, 0, 18, 0));
 
@@ -248,6 +261,27 @@ public class DashboardPenyewa {
         card.setPrefWidth(250);
         card.setOnAction(e -> tampilkanDetail(v));
         return card;
+    }
+
+    // Kalau ada foto & filenya ada di disk, tampilkan ImageView. Kalau tidak, placeholder abu-abu.
+    private Node buatFotoNode(String namaFoto, double width, double height) {
+        if (namaFoto != null) {
+            String fullPath = FileUtil.getFullPath(namaFoto);
+            File file = new File(fullPath);
+            if (file.exists()) {
+                ImageView iv = new ImageView(new Image(file.toURI().toString()));
+                iv.setFitWidth(width);
+                iv.setFitHeight(height);
+                iv.setPreserveRatio(false);
+                return iv;
+            }
+        }
+        Region placeholder = new Region();
+        placeholder.getStyleClass().add("card-image-placeholder");
+        placeholder.setPrefSize(width, height);
+        placeholder.setMinSize(width, height);
+        placeholder.setMaxSize(width, height);
+        return placeholder;
     }
 
     // ====== search (nama atau kapasitas) ======
@@ -337,9 +371,19 @@ public class DashboardPenyewa {
         lblDetailNama.setText(v.getNamaVilla());
         lblDetailKategori.setText("🏷 Kategori: " + v.getNamaKategori());
         lblDetailKapasitas.setText("👥 Kapasitas: " + v.getKapasitas() + " orang");
-        lblDetailHarga.setText(RUPIAH.format(v.getHarga()) + " / malam");
+        lblDetailHargaWeekday.setText("Weekday: " + RUPIAH.format(v.getHargaWeekday()) + " / malam");
+        lblDetailHargaWeekend.setText("Weekend (Jum-Sab/Sab-Min): " + RUPIAH.format(v.getHargaWeekend()) + " / malam");
         lblDetailAlamat.setText(v.getAlamatVilla());
         lblDetailPemilik.setText(v.getNamaPemilik());
+
+        if (imgDetailFoto != null) {
+            if (v.getFoto() != null) {
+                File file = new File(FileUtil.getFullPath(v.getFoto()));
+                imgDetailFoto.setImage(file.exists() ? new Image(file.toURI().toString()) : null);
+            } else {
+                imgDetailFoto.setImage(null);
+            }
+        }
 
         renderFasilitas(muatFasilitas(v.getIdVilla()));
 
@@ -357,10 +401,12 @@ public class DashboardPenyewa {
         if (villaTerpilih == null) return;
 
         lblVillaTerpilih.setText("Villa: " + villaTerpilih.getNamaVilla()
-                + " (" + RUPIAH.format(villaTerpilih.getHarga()) + " / malam)");
+                + " (Weekday " + RUPIAH.format(villaTerpilih.getHargaWeekday())
+                + " / Weekend " + RUPIAH.format(villaTerpilih.getHargaWeekend()) + ")");
 
         cbPenyewa.getItems().setAll(daftarPenyewa);
         cbPenyewa.setValue(null);
+        cbMetodePembayaran.setValue(null);
         txtAlamatBooking.clear();
         dpCheckin.setValue(null);
         dpCheckout.setValue(null);
@@ -371,12 +417,24 @@ public class DashboardPenyewa {
         showOverlayBubble(bookingPane);
     }
 
+    // Estimasi tampilan doang; total resmi tetap dihitung server lewat fnHitungGrandHarga saat insert
     private void hitungGrandHarga() {
         var ci = dpCheckin.getValue();
         var co = dpCheckout.getValue();
         if (ci != null && co != null && co.isAfter(ci) && villaTerpilih != null) {
-            long malam = ChronoUnit.DAYS.between(ci, co);
-            lblGrandHarga.setText("Total: " + RUPIAH.format(villaTerpilih.getHarga().doubleValue() * malam));
+            BigDecimal weekday = villaTerpilih.getHargaWeekday();
+            BigDecimal weekend = villaTerpilih.getHargaWeekend();
+            BigDecimal total = BigDecimal.ZERO;
+
+            var tgl = ci;
+            while (tgl.isBefore(co)) {
+                boolean isWeekend = tgl.getDayOfWeek().toString().equals("FRIDAY")
+                        || tgl.getDayOfWeek().toString().equals("SATURDAY");
+                total = total.add(isWeekend ? weekend : weekday);
+                tgl = tgl.plusDays(1);
+            }
+
+            lblGrandHarga.setText("Estimasi Total: " + RUPIAH.format(total));
         } else {
             lblGrandHarga.setText("");
         }
@@ -390,7 +448,7 @@ public class DashboardPenyewa {
 
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_InsertBooking(?, ?, ?, ?, ?, ?)}");
+            CallableStatement cs = k.conn.prepareCall("{call sp_InsertBooking(?, ?, ?, ?, ?, ?, ?)}");
             cs.setString(1, penyewa.getIdPenyewa());
             cs.setString(2, villaTerpilih.getIdVilla());
             cs.setDate(3, java.sql.Date.valueOf(dpCheckin.getValue()));
@@ -401,9 +459,13 @@ public class DashboardPenyewa {
             if (catatan.isEmpty()) cs.setNull(6, Types.VARCHAR);
             else cs.setString(6, catatan);
 
+            cs.setString(7, cbMetodePembayaran.getValue());
+
+            // StatusBooking otomatis 'Menunggu Konfirmasi' di server, tidak dikirim dari sini
+
             ResultSet rs = cs.executeQuery();
             if (rs.next()) {
-                String idBooking = rs.getString("Id_trsBooking");
+                String idBooking = rs.getString("IdTrsBooking");
                 tampilkanHasilBooking(idBooking);
             }
         } catch (NumberFormatException e) {
@@ -423,6 +485,10 @@ public class DashboardPenyewa {
     private boolean validasiBooking() {
         if (cbPenyewa.getValue() == null) {
             NotifUtil.show(cbPenyewa, NotifUtil.Type.WARNING, "Pilih penyewa terlebih dahulu!");
+            return false;
+        }
+        if (cbMetodePembayaran.getValue() == null) {
+            NotifUtil.show(cbMetodePembayaran, NotifUtil.Type.WARNING, "Pilih metode pembayaran terlebih dahulu!");
             return false;
         }
         if (dpCheckin.getValue() == null || dpCheckout.getValue() == null

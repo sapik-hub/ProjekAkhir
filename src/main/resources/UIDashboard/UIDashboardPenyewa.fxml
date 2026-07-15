@@ -2,6 +2,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.text.Font?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
@@ -52,11 +53,14 @@
                       maxWidth="440" maxHeight="620" prefWidth="440">
                     <padding><Insets top="35" bottom="30" left="35" right="35"/></padding>
 
+                    <ImageView fx:id="imgDetailFoto" fitWidth="200" fitHeight="150" preserveRatio="false"/>
+
                     <Label fx:id="lblDetailStatus" styleClass="detail-status-badge"/>
                     <Label fx:id="lblDetailNama" styleClass="detail-title"/>
                     <Label fx:id="lblDetailKategori" styleClass="detail-sub"/>
                     <Label fx:id="lblDetailKapasitas" styleClass="detail-sub"/>
-                    <Label fx:id="lblDetailHarga" styleClass="detail-harga"/>
+                    <Label fx:id="lblDetailHargaWeekday" styleClass="detail-harga"/>
+                    <Label fx:id="lblDetailHargaWeekend" styleClass="detail-harga"/>
 
                     <Separator/>
 
@@ -79,7 +83,7 @@
 
                 <!-- BUBBLE 2: Form booking (langsung inline, tanpa fx:include) -->
                 <VBox fx:id="bookingPane" styleClass="detail-bubble" alignment="CENTER" spacing="12"
-                      maxWidth="440" maxHeight="650" prefWidth="440" visible="false" managed="false">
+                      maxWidth="440" maxHeight="680" prefWidth="440" visible="false" managed="false">
 
                     <padding><Insets top="35" bottom="30" left="35" right="35"/></padding>
 
@@ -105,6 +109,9 @@
 
                     <Label text="Jumlah Tamu" styleClass="detail-label-kecil"/>
                     <TextField fx:id="txtJumlahTamu" styleClass="input-field"/>
+
+                    <Label text="Metode Pembayaran" styleClass="detail-label-kecil"/>
+                    <ComboBox fx:id="cbMetodePembayaran" styleClass="input-field" maxWidth="Infinity" promptText="Pilih metode pembayaran..."/>
 
                     <Label text="Catatan (opsional)" styleClass="detail-label-kecil"/>
                     <TextArea fx:id="txtCatatan" styleClass="input-field" prefHeight="45" wrapText="true"/>
