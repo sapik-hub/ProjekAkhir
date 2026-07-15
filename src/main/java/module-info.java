@@ -11,6 +11,7 @@ module com.example.sewavilla {
     opens ProjekAstra.Controller.Login to javafx.fxml;
     opens ProjekAstra.Controller.Dashboard to javafx.fxml;
     opens ProjekAstra.Controller.Transaksi to javafx.fxml;
+    opens UITransaksi to javafx.fxml;
     opens ProjekAstra.Controller.Master to javafx.fxml;
     opens ProjekAstra.Model to javafx.base;
 

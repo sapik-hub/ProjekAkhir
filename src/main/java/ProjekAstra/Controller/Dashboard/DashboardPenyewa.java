@@ -3,6 +3,7 @@ package ProjekAstra.Controller.Dashboard;
 import ProjekAstra.MainApp;
 import ProjekAstra.Model.Villa;
 import ProjekAstra.Model.Fasilitas;
+import ProjekAstra.Model.Penyewa;
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.Util.NotifUtil;
 
@@ -10,23 +11,30 @@ import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
 
-import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
+import java.sql.Types;
 import java.text.NumberFormat;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import javafx.geometry.Pos;
-import javafx.scene.layout.Region;
 
 public class DashboardPenyewa {
 
@@ -37,6 +45,8 @@ public class DashboardPenyewa {
     @FXML private FlowPane bubbleContainer;
 
     @FXML private StackPane overlayPane;
+
+    // ---- detail bubble ----
     @FXML private VBox detailBubble;
     @FXML private Label lblDetailStatus;
     @FXML private Label lblDetailNama;
@@ -47,7 +57,23 @@ public class DashboardPenyewa {
     @FXML private Label lblDetailPemilik;
     @FXML private FlowPane fasilitasContainer;
 
+    // ---- booking bubble (sudah inline, bukan fx:include lagi) ----
+    @FXML private VBox bookingPane;
+    @FXML private Label lblVillaTerpilih;
+    @FXML private ComboBox<Penyewa> cbPenyewa;
+    @FXML private TextArea txtAlamatBooking;
+    @FXML private TextArea txtCatatan;
+    @FXML private DatePicker dpCheckin;
+    @FXML private DatePicker dpCheckout;
+    @FXML private TextField txtJumlahTamu;
+    @FXML private Label lblGrandHarga;
+
+    // ---- result bubble ----
+    @FXML private VBox resultBubble;
+    @FXML private Label lblKodeBooking;
+
     private final List<Villa> daftarVilla = new ArrayList<>();
+    private final List<Penyewa> daftarPenyewa = new ArrayList<>();
     private Villa villaTerpilih;
 
     private static final NumberFormat RUPIAH =
@@ -57,6 +83,35 @@ public class DashboardPenyewa {
     public void initialize() {
         muatDaftarVilla();
         renderBubble(daftarVilla);
+
+        muatDaftarPenyewa();
+        setupComboPenyewa();
+
+        dpCheckin.valueProperty().addListener((o, old, val) -> hitungGrandHarga());
+        dpCheckout.valueProperty().addListener((o, old, val) -> hitungGrandHarga());
+    }
+
+    private void setupComboPenyewa() {
+        cbPenyewa.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Penyewa p) {
+                return p == null ? "" : p.getNama() + " (" + p.getIdPenyewa() + ")";
+            }
+            @Override
+            public Penyewa fromString(String s) { return null; }
+        });
+        cbPenyewa.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(Penyewa p, boolean empty) {
+                super.updateItem(p, empty);
+                setText(empty || p == null ? null : p.getNama() + " (" + p.getIdPenyewa() + ")");
+            }
+        });
+        cbPenyewa.valueProperty().addListener((obs, old, val) -> {
+            if (val != null) {
+                txtAlamatBooking.setText(val.getAlamat() == null ? "" : val.getAlamat());
+            }
+        });
     }
 
     // ====== ambil semua villa dari database ======
@@ -81,6 +136,32 @@ public class DashboardPenyewa {
             }
         } catch (Exception e) {
             NotifUtil.show(bubbleContainer, NotifUtil.Type.ERROR, "Gagal memuat data villa: " + e.getMessage());
+        } finally {
+            try { k.conn.close(); } catch (Exception ignored) {}
+        }
+    }
+
+    // ====== ambil semua penyewa (buat combo box di pane booking) ======
+    private void muatDaftarPenyewa() {
+        daftarPenyewa.clear();
+        Koneksi k = new Koneksi();
+        try {
+            CallableStatement cs = k.conn.prepareCall("{call sp_GetAllPenyewa}");
+            ResultSet rs = cs.executeQuery();
+
+            while (rs.next()) {
+                daftarPenyewa.add(new Penyewa(
+                        rs.getString("IdPenyewa"),
+                        rs.getString("Nama"),
+                        rs.getString("NoTelp"),
+                        rs.getString("NoKtp"),
+                        rs.getDate("TglLahir") == null ? null : rs.getDate("TglLahir").toLocalDate(),
+                        rs.getString("Alamat"),
+                        rs.getString("Username")
+                ));
+            }
+        } catch (Exception e) {
+            NotifUtil.show(bubbleContainer, NotifUtil.Type.ERROR, "Gagal memuat data penyewa: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -192,6 +273,62 @@ public class DashboardPenyewa {
         renderBubble(daftarVilla);
     }
 
+    // ====================================================================
+    //  BUBBLE ENGINE (dipakai bareng: detail, booking, result)
+    // ====================================================================
+
+    private Node[] semuaBubble() {
+        return new Node[]{ detailBubble, bookingPane, resultBubble };
+    }
+
+    private void showOverlayBubble(Node bubble) {
+        overlayPane.setVisible(true);
+        overlayPane.setManaged(true);
+
+        for (Node b : semuaBubble()) {
+            boolean aktif = (b == bubble);
+            b.setVisible(aktif);
+            b.setManaged(aktif);
+        }
+
+        bubble.setScaleX(0.7);
+        bubble.setScaleY(0.7);
+        bubble.setOpacity(0);
+
+        ScaleTransition scale = new ScaleTransition(Duration.millis(220), bubble);
+        scale.setToX(1);
+        scale.setToY(1);
+        FadeTransition fade = new FadeTransition(Duration.millis(220), bubble);
+        fade.setToValue(1);
+        scale.play();
+        fade.play();
+    }
+
+    private void closeOverlay() {
+        Node current = null;
+        for (Node b : semuaBubble()) {
+            if (b.isVisible()) { current = b; break; }
+        }
+        if (current == null) {
+            overlayPane.setVisible(false);
+            overlayPane.setManaged(false);
+            return;
+        }
+
+        Node finalCurrent = current;
+        FadeTransition fade = new FadeTransition(Duration.millis(180), current);
+        fade.setFromValue(1);
+        fade.setToValue(0);
+        fade.setOnFinished(e -> {
+            overlayPane.setVisible(false);
+            overlayPane.setManaged(false);
+            finalCurrent.setVisible(false);
+            finalCurrent.setManaged(false);
+            mainView.setVisible(true);
+        });
+        fade.play();
+    }
+
     // ====== detail bubble (layar transaksi) ======
     private void tampilkanDetail(Villa v) {
         villaTerpilih = v;
@@ -206,59 +343,115 @@ public class DashboardPenyewa {
 
         renderFasilitas(muatFasilitas(v.getIdVilla()));
 
-        overlayPane.setVisible(true);
-        overlayPane.setManaged(true);
-
-        detailBubble.setScaleX(0.7);
-        detailBubble.setScaleY(0.7);
-        detailBubble.setOpacity(0);
-
-        ScaleTransition scale = new ScaleTransition(Duration.millis(220), detailBubble);
-        scale.setToX(1); scale.setToY(1);
-        FadeTransition fade = new FadeTransition(Duration.millis(220), detailBubble);
-        fade.setToValue(1);
-        scale.play();
-        fade.play();
+        showOverlayBubble(detailBubble);
     }
 
     @FXML
     private void handleKembaliBubble() {
-        FadeTransition fade = new FadeTransition(Duration.millis(180), detailBubble);
-        fade.setFromValue(1);
-        fade.setToValue(0);
-        fade.setOnFinished(e -> {
-            overlayPane.setVisible(false);
-            overlayPane.setManaged(false);
-            mainView.setVisible(true);
-        });
-        fade.play();
+        closeOverlay();
     }
 
+    // ====== buka form booking ======
     @FXML
     private void handleBooking() {
         if (villaTerpilih == null) return;
 
-        try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
-                    getClass().getResource("/UITransaksi/BookingKiosk.fxml")
-            );
-            javafx.scene.Parent root = loader.load();
+        lblVillaTerpilih.setText("Villa: " + villaTerpilih.getNamaVilla()
+                + " (" + RUPIAH.format(villaTerpilih.getHarga()) + " / malam)");
 
-            ProjekAstra.Controller.Transaksi.BookingKiosk controllerKiosk = loader.getController();
-            controllerKiosk.setVillaTerpilih(
-                    villaTerpilih.getIdVilla(),
-                    villaTerpilih.getNamaVilla(),
-                    villaTerpilih.getHarga().doubleValue()
-            );
+        cbPenyewa.getItems().setAll(daftarPenyewa);
+        cbPenyewa.setValue(null);
+        txtAlamatBooking.clear();
+        dpCheckin.setValue(null);
+        dpCheckout.setValue(null);
+        txtJumlahTamu.clear();
+        txtCatatan.clear();
+        lblGrandHarga.setText("");
 
-            javafx.stage.Stage stage = (javafx.stage.Stage) mainView.getScene().getWindow();
-            stage.getScene().setRoot(root);
+        showOverlayBubble(bookingPane);
+    }
 
-        } catch (Exception e) {
-            e.printStackTrace(); // <-- tambahkan ini
-            NotifUtil.show(detailBubble, NotifUtil.Type.ERROR, "Gagal membuka halaman booking: " + e.getMessage());
+    private void hitungGrandHarga() {
+        var ci = dpCheckin.getValue();
+        var co = dpCheckout.getValue();
+        if (ci != null && co != null && co.isAfter(ci) && villaTerpilih != null) {
+            long malam = ChronoUnit.DAYS.between(ci, co);
+            lblGrandHarga.setText("Total: " + RUPIAH.format(villaTerpilih.getHarga().doubleValue() * malam));
+        } else {
+            lblGrandHarga.setText("");
         }
+    }
 
+    @FXML
+    private void handleBookingSekarang() {
+        if (!validasiBooking()) return;
+
+        Penyewa penyewa = cbPenyewa.getValue();
+
+        Koneksi k = new Koneksi();
+        try {
+            CallableStatement cs = k.conn.prepareCall("{call sp_InsertBooking(?, ?, ?, ?, ?, ?)}");
+            cs.setString(1, penyewa.getIdPenyewa());
+            cs.setString(2, villaTerpilih.getIdVilla());
+            cs.setDate(3, java.sql.Date.valueOf(dpCheckin.getValue()));
+            cs.setDate(4, java.sql.Date.valueOf(dpCheckout.getValue()));
+            cs.setInt(5, Integer.parseInt(txtJumlahTamu.getText().trim()));
+
+            String catatan = txtCatatan.getText().trim();
+            if (catatan.isEmpty()) cs.setNull(6, Types.VARCHAR);
+            else cs.setString(6, catatan);
+
+            ResultSet rs = cs.executeQuery();
+            if (rs.next()) {
+                String idBooking = rs.getString("Id_trsBooking");
+                tampilkanHasilBooking(idBooking);
+            }
+        } catch (NumberFormatException e) {
+            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.WARNING, "Jumlah tamu harus berupa angka!");
+        } catch (Exception e) {
+            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.ERROR, "Gagal booking: " + e.getMessage());
+        } finally {
+            try { k.conn.close(); } catch (Exception ignored) {}
+        }
+    }
+
+    @FXML
+    private void handleKembaliBooking() {
+        closeOverlay();
+    }
+
+    private boolean validasiBooking() {
+        if (cbPenyewa.getValue() == null) {
+            NotifUtil.show(cbPenyewa, NotifUtil.Type.WARNING, "Pilih penyewa terlebih dahulu!");
+            return false;
+        }
+        if (dpCheckin.getValue() == null || dpCheckout.getValue() == null
+                || txtJumlahTamu.getText().trim().isEmpty()) {
+            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.WARNING, "Tanggal dan Jumlah Tamu wajib diisi!");
+            return false;
+        }
+        if (!dpCheckout.getValue().isAfter(dpCheckin.getValue())) {
+            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.WARNING, "Tanggal Check-Out harus setelah Check-In!");
+            return false;
+        }
+        if (!txtJumlahTamu.getText().trim().matches("^[0-9]+$")) {
+            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.WARNING, "Jumlah Tamu harus berupa angka!");
+            return false;
+        }
+        return true;
+    }
+
+    // ====== hasil booking (pengganti Alert) ======
+    private void tampilkanHasilBooking(String idBooking) {
+        lblKodeBooking.setText(idBooking);
+        showOverlayBubble(resultBubble);
+    }
+
+    @FXML
+    private void handleTutupResult() {
+        closeOverlay();
+        muatDaftarVilla();
+        renderBubble(daftarVilla);
     }
 
     @FXML

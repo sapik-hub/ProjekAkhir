@@ -6,42 +6,46 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="ProjekAstra.Controller.Transaksi.BookingKiosk"
-            prefHeight="600.0" prefWidth="500.0">
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="ProjekAstra.Controller.Transaksi.BookingKiosk"
+      styleClass="detail-bubble" alignment="CENTER" spacing="12"
+      maxWidth="440" maxHeight="650" prefWidth="440">
 
-    <VBox spacing="12" AnchorPane.topAnchor="20" AnchorPane.leftAnchor="40" AnchorPane.rightAnchor="40">
-        <Label text="Form Booking Villa" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
-        <Label fx:id="lblVillaTerpilih" style="-fx-font-size: 14; -fx-text-fill: #777;"/>
+    <padding><Insets top="35" bottom="30" left="35" right="35"/></padding>
 
-        <Label text="Nama Lengkap"/>
-        <TextField fx:id="txtNama"/>
+    <Label text="Form Booking Villa" styleClass="detail-title"/>
+    <Label fx:id="lblVillaTerpilih" styleClass="detail-sub" wrapText="true"/>
 
-        <Label text="No. Telepon"/>
-        <TextField fx:id="txtNoTelp"/>
+    <Label text="Pilih Penyewa" styleClass="detail-label-kecil"/>
+    <ComboBox fx:id="cbPenyewa" styleClass="input-field" maxWidth="Infinity" promptText="Pilih penyewa..."/>
 
-        <Label text="Alamat"/>
-        <TextArea fx:id="txtAlamat" prefHeight="60"/>
+    <Label text="Alamat" styleClass="detail-label-kecil"/>
+    <TextArea fx:id="txtAlamat" styleClass="input-field" prefHeight="50" wrapText="true"/>
 
-        <Label text="Tanggal Check-In"/>
-        <DatePicker fx:id="dpCheckin" prefWidth="300"/>
+    <HBox spacing="12">
+        <VBox spacing="4" HBox.hgrow="ALWAYS">
+            <Label text="Check-In" styleClass="detail-label-kecil"/>
+            <DatePicker fx:id="dpCheckin" styleClass="input-field" maxWidth="Infinity"/>
+        </VBox>
+        <VBox spacing="4" HBox.hgrow="ALWAYS">
+            <Label text="Check-Out" styleClass="detail-label-kecil"/>
+            <DatePicker fx:id="dpCheckout" styleClass="input-field" maxWidth="Infinity"/>
+        </VBox>
+    </HBox>
 
-        <Label text="Tanggal Check-Out"/>
-        <DatePicker fx:id="dpCheckout" prefWidth="300"/>
+    <Label text="Jumlah Tamu" styleClass="detail-label-kecil"/>
+    <TextField fx:id="txtJumlahTamu" styleClass="input-field"/>
 
-        <Label text="Jumlah Tamu"/>
-        <TextField fx:id="txtJumlahTamu"/>
+    <Label text="Catatan (opsional)" styleClass="detail-label-kecil"/>
+    <TextArea fx:id="txtCatatan" styleClass="input-field" prefHeight="45" wrapText="true"/>
 
-        <Label text="Catatan (opsional)"/>
-        <TextArea fx:id="txtCatatan" prefHeight="50"/>
+    <Label fx:id="lblGrandHarga" styleClass="detail-harga"/>
 
-        <Label fx:id="lblGrandHarga" style="-fx-font-size: 16; -fx-font-weight: bold;"/>
+    <Region VBox.vgrow="ALWAYS"/>
 
-        <HBox spacing="10">
-            <Button fx:id="btnKembali" text="Kembali" onAction="#handleKembali"/>
-            <Button fx:id="btnBooking" text="Booking Sekarang" onAction="#handleBookingSekarang"/>
-        </HBox>
-    </VBox>
-
-</AnchorPane>
+    <HBox spacing="15" alignment="CENTER">
+        <Button text="⬅ Kembali" onAction="#handleKembali" styleClass="btn-kembali" prefWidth="150"/>
+        <Button text="📖 Booking Sekarang" onAction="#handleBookingSekarang" styleClass="btn-booking" prefWidth="180"/>
+    </HBox>
+</VBox>
