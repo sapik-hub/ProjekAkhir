@@ -29,10 +29,10 @@
             <VBox fx:id="mainView" spacing="20" alignment="TOP_CENTER" styleClass="kiosk-main">
                 <padding><Insets top="25" bottom="15" left="30" right="30"/></padding>
 
-                <Label text="🏡 Pilih Villa Kamuu 🏡" styleClass="welcome-text" style="-fx-font-size: 20px;"/>
+                <Label text="🏡 Pilih Villa Kamu 🏡" styleClass="welcome-text" style="-fx-font-size: 20px;"/>
 
                 <HBox spacing="10" alignment="CENTER_LEFT" styleClass="search-bar" maxWidth="Infinity">
-                    <TextField fx:id="txtCari" promptText="Cari nama villa, lokasi, atau kapasitas (mis. 6)"
+                    <TextField fx:id="txtCari" promptText="Cari nama villa atau kapasitas (mis. 6)"
                                prefWidth="380" styleClass="search-field"/>
                     <Button text="🔍 Cari" onAction="#handleCari" styleClass="btn-search"/>
                     <Button text="✖ Reset" onAction="#handleResetCari" styleClass="btn-reset"/>
