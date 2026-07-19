@@ -21,10 +21,7 @@
                 </Label>
 
                 <TextField fx:id="txtId" promptText="ID Fasilitas" editable="false" styleClass="input-field"/>
-                <ComboBox fx:id="cbVilla" promptText="Pilih Villa" maxWidth="Infinity" styleClass="input-field"/>
                 <TextField fx:id="txtNamaFasilitas" promptText="Nama Fasilitas" styleClass="input-field"/>
-                <TextField fx:id="txtJumlah" promptText="Jumlah" styleClass="input-field"/>
-                <TextArea fx:id="txtDeskripsi" promptText="Deskripsi" prefRowCount="4" wrapText="true" styleClass="input-field"/>
 
                 <Region VBox.vgrow="ALWAYS"/>
                 <TextField fx:id="txtCari" promptText="🔍 Cari fasilitas..." styleClass="input-field"/>
@@ -35,11 +32,8 @@
 
                 <TableView fx:id="tableFasilitas" VBox.vgrow="ALWAYS">
                     <columns>
-                        <TableColumn fx:id="colId" text="ID Fasilitas" prefWidth="100"/>
-                        <TableColumn fx:id="colVilla" text="Villa" prefWidth="150"/>
-                        <TableColumn fx:id="colNamaFasilitas" text="Nama Fasilitas" prefWidth="160"/>
-                        <TableColumn fx:id="colJumlah" text="Jumlah" prefWidth="70"/>
-                        <TableColumn fx:id="colDeskripsi" text="Deskripsi" prefWidth="220"/>
+                        <TableColumn fx:id="colId" text="ID Fasilitas" prefWidth="120"/>
+                        <TableColumn fx:id="colNamaFasilitas" text="Nama Fasilitas" prefWidth="250"/>
                     </columns>
                 </TableView>
             </VBox>

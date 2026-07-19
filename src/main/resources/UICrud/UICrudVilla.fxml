@@ -22,10 +22,7 @@
                 </Label>
 
                 <TextField fx:id="txtId" promptText="ID Villa" editable="false" styleClass="input-field"/>
-                <TextField fx:id="txtPemilik"
-                           editable="false"
-                           promptText="Pemilik"
-                           styleClass="input-field"/>
+                <TextField fx:id="txtPemilik" editable="false" promptText="Pemilik" styleClass="input-field"/>
                 <ComboBox fx:id="cbKategori" promptText="Pilih Kategori" maxWidth="Infinity" styleClass="input-field"/>
                 <TextField fx:id="txtNamaVilla" promptText="Nama Villa" styleClass="input-field"/>
                 <TextField fx:id="txtKapasitas" promptText="Kapasitas (orang)" styleClass="input-field"/>
@@ -36,12 +33,37 @@
 
                 <HBox spacing="8" alignment="CENTER_LEFT">
                     <ImageView fx:id="imgPreview" fitWidth="60" fitHeight="60" preserveRatio="true"/>
-                    <Button fx:id="btnPilihFoto" text="Pilih Foto" onAction="#handlePilihFoto"
-                            styleClass="btn-neutral"/>
+                    <Button fx:id="btnPilihFoto" text="Pilih Foto" onAction="#handlePilihFoto" styleClass="btn-neutral"/>
                 </HBox>
 
                 <Region VBox.vgrow="ALWAYS"/>
                 <TextField fx:id="txtCari" promptText="🔍 Cari villa..." styleClass="input-field"/>
+            </VBox>
+
+            <!-- >>> FASILITAS: panel baru buat nambah/lihat fasilitas milik villa yg aktif -->
+            <VBox spacing="10" prefWidth="260" styleClass="card">
+                <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+                <Label text="Fasilitas Villa" styleClass="brand-title">
+                    <font><Font name="System Bold" size="15"/></font>
+                </Label>
+
+                <ComboBox fx:id="cbFasilitas" promptText="Pilih Fasilitas" maxWidth="Infinity" styleClass="input-field"/>
+                <TextField fx:id="txtJumlahFasilitas" promptText="Jumlah" styleClass="input-field"/>
+                <TextField fx:id="txtDeskripsiFasilitas" promptText="Deskripsi (opsional)" styleClass="input-field"/>
+                <Button fx:id="btnTambahFasilitas" text="+ Tambah ke Villa" onAction="#handleTambahFasilitas"
+                        styleClass="btn-primary" maxWidth="Infinity"/>
+
+                <TableView fx:id="tableFasilitasVilla" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colFasNama" text="Fasilitas" prefWidth="110"/>
+                        <TableColumn fx:id="colFasJumlah" text="Jml" prefWidth="45"/>
+                        <TableColumn fx:id="colFasDeskripsi" text="Deskripsi" prefWidth="90"/>
+                    </columns>
+                </TableView>
+
+                <Button fx:id="btnHapusFasilitas" text="Hapus dari Villa" onAction="#handleHapusFasilitas"
+                        styleClass="btn-danger" maxWidth="Infinity"/>
             </VBox>
 
             <VBox HBox.hgrow="ALWAYS" styleClass="card">
@@ -68,14 +90,10 @@
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="card">
             <padding><Insets top="15" bottom="15" left="20" right="20"/></padding>
 
-            <Button fx:id="btnSimpan" text="Simpan" onAction="#handleSimpan"
-                    styleClass="btn-primary" prefWidth="100"/>
-            <Button fx:id="btnUbah" text="Ubah" onAction="#handleUbah"
-                    styleClass="btn-warning" prefWidth="100"/>
-            <Button fx:id="btnHapus" text="Hapus" onAction="#handleHapus"
-                    styleClass="btn-danger" prefWidth="100"/>
-            <Button text="Reset" onAction="#handleReset"
-                    styleClass="btn-neutral" prefWidth="100"/>
+            <Button fx:id="btnSimpan" text="Simpan" onAction="#handleSimpan" styleClass="btn-primary" prefWidth="100"/>
+            <Button fx:id="btnUbah" text="Ubah" onAction="#handleUbah" styleClass="btn-warning" prefWidth="100"/>
+            <Button fx:id="btnHapus" text="Hapus" onAction="#handleHapus" styleClass="btn-danger" prefWidth="100"/>
+            <Button text="Reset" onAction="#handleReset" styleClass="btn-neutral" prefWidth="100"/>
         </HBox>
     </bottom>
 

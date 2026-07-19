@@ -1,20 +1,22 @@
 package ProjekAstra.Model;
 
 public class Fasilitas {
-    private String idFasilitas, namaVilla, namaFasilitas, deskripsi;
-    private int jumlah;
+    private String idFasilitas;
+    private String namaFasilitas;
 
-    public Fasilitas(String idFasilitas, String namaVilla, String namaFasilitas, int jumlah, String deskripsi) {
+    public Fasilitas() {}
+
+    public Fasilitas(String idFasilitas, String namaFasilitas) {
         this.idFasilitas = idFasilitas;
-        this.namaVilla = namaVilla;
         this.namaFasilitas = namaFasilitas;
-        this.jumlah = jumlah;
-        this.deskripsi = deskripsi;
     }
 
     public String getIdFasilitas() { return idFasilitas; }
-    public String getNamaVilla() { return namaVilla; }
+    public void setIdFasilitas(String idFasilitas) { this.idFasilitas = idFasilitas; }
+
     public String getNamaFasilitas() { return namaFasilitas; }
-    public int getJumlah() { return jumlah; }
-    public String getDeskripsi() { return deskripsi; }
+    public void setNamaFasilitas(String namaFasilitas) { this.namaFasilitas = namaFasilitas; }
+
+    @Override
+    public String toString() { return namaFasilitas; } // biar tampil rapi di ComboBox
 }

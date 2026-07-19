@@ -2,7 +2,7 @@ package ProjekAstra.Controller.Dashboard;
 
 import ProjekAstra.MainApp;
 import ProjekAstra.Model.Villa;
-import ProjekAstra.Model.Fasilitas;
+import ProjekAstra.Model.VillaFasilitas;
 import ProjekAstra.Model.Penyewa;
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.Util.FileUtil;
@@ -182,8 +182,9 @@ public class DashboardPenyewa {
     }
 
     // ====== ambil fasilitas by IdVilla dari database ======
-    private List<Fasilitas> muatFasilitas(String idVilla) {
-        List<Fasilitas> hasil = new ArrayList<>();
+    // ====== ambil fasilitas by IdVilla dari database ======
+    private List<VillaFasilitas> muatFasilitas(String idVilla) {
+        List<VillaFasilitas> hasil = new ArrayList<>();
         Koneksi k = new Koneksi();
         try {
             CallableStatement cs = k.conn.prepareCall("{call sp_GetFasilitasByVilla(?)}");
@@ -191,9 +192,10 @@ public class DashboardPenyewa {
             ResultSet rs = cs.executeQuery();
 
             while (rs.next()) {
-                hasil.add(new Fasilitas(
+                hasil.add(new VillaFasilitas(
+                        rs.getString("IdVillaFasilitas"),
+                        rs.getString("IdVilla"),
                         rs.getString("IdFasilitas"),
-                        rs.getString("NamaVilla"),
                         rs.getString("NamaFasilitas"),
                         rs.getInt("Jumlah"),
                         rs.getString("Deskripsi")
@@ -207,7 +209,7 @@ public class DashboardPenyewa {
         return hasil;
     }
 
-    private void renderFasilitas(List<Fasilitas> list) {
+    private void renderFasilitas(List<VillaFasilitas> list) {
         fasilitasContainer.getChildren().clear();
         if (list.isEmpty()) {
             Label kosong = new Label("Belum ada fasilitas");
@@ -215,7 +217,7 @@ public class DashboardPenyewa {
             fasilitasContainer.getChildren().add(kosong);
             return;
         }
-        for (Fasilitas f : list) {
+        for (VillaFasilitas f : list) {
             String teks = f.getNamaFasilitas() + (f.getJumlah() > 1 ? " (" + f.getJumlah() + ")" : "");
             Label chip = new Label(teks);
             chip.getStyleClass().add("fasilitas-chip");

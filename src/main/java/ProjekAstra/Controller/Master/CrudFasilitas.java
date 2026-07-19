@@ -13,27 +13,22 @@ import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.net.URL;
 import java.sql.CallableStatement;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ResourceBundle;
 
 public class CrudFasilitas implements Initializable {
 
-    @FXML private TextField txtId, txtNamaFasilitas, txtJumlah, txtCari;
-    @FXML private TextArea txtDeskripsi;
-    @FXML private ComboBox<String> cbVilla;
+    @FXML private TextField txtId, txtNamaFasilitas, txtCari;
     @FXML private Button btnSimpan, btnUbah, btnHapus;
 
     @FXML private TableView<Fasilitas> tableFasilitas;
-    @FXML private TableColumn<Fasilitas, String> colId, colVilla, colNamaFasilitas, colDeskripsi;
-    @FXML private TableColumn<Fasilitas, Integer> colJumlah;
+    @FXML private TableColumn<Fasilitas, String> colId, colNamaFasilitas;
 
     private final ObservableList<Fasilitas> listFasilitas = FXCollections.observableArrayList();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         setupTable();
-        loadComboVilla();
         loadTable();
         setClose();
 
@@ -47,27 +42,7 @@ public class CrudFasilitas implements Initializable {
 
     private void setupTable() {
         colId.setCellValueFactory(new PropertyValueFactory<>("idFasilitas"));
-        colVilla.setCellValueFactory(new PropertyValueFactory<>("namaVilla"));
         colNamaFasilitas.setCellValueFactory(new PropertyValueFactory<>("namaFasilitas"));
-        colJumlah.setCellValueFactory(new PropertyValueFactory<>("jumlah"));
-        colDeskripsi.setCellValueFactory(new PropertyValueFactory<>("deskripsi"));
-    }
-
-    // ===== Combo Villa (format: "VLA0001 - Villa Bukit Indah") =====
-    private void loadComboVilla() {
-        cbVilla.getItems().clear();
-        Koneksi k = new Koneksi();
-        try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_GetAllVilla}");
-            ResultSet rs = cs.executeQuery();
-            while (rs.next()) {
-                cbVilla.getItems().add(rs.getString("IdVilla") + " - " + rs.getString("NamaVilla"));
-            }
-        } catch (Exception e) {
-            notif(NotifUtil.Type.ERROR, "Gagal memuat data villa: " + e.getMessage());
-        } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
-        }
     }
 
     private void loadTable() {
@@ -76,14 +51,10 @@ public class CrudFasilitas implements Initializable {
         try {
             CallableStatement cs = k.conn.prepareCall("{call sp_GetAllFasilitas}");
             ResultSet rs = cs.executeQuery();
-
             while (rs.next()) {
                 listFasilitas.add(new Fasilitas(
                         rs.getString("IdFasilitas"),
-                        rs.getString("NamaVilla"),
-                        rs.getString("NamaFasilitas"),
-                        rs.getInt("Jumlah"),
-                        rs.getString("Deskripsi")
+                        rs.getString("NamaFasilitas")
                 ));
             }
             tableFasilitas.setItems(listFasilitas);
@@ -115,11 +86,8 @@ public class CrudFasilitas implements Initializable {
 
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_InsertFasilitas(?, ?, ?, ?)}");
-            cs.setString(1, getIdFromCombo(cbVilla.getValue()));
-            cs.setString(2, txtNamaFasilitas.getText().trim());
-            cs.setInt(3, Integer.parseInt(txtJumlah.getText().trim()));
-            cs.setString(4, txtDeskripsi.getText().trim());
+            CallableStatement cs = k.conn.prepareCall("{call sp_InsertFasilitas(?)}");
+            cs.setString(1, txtNamaFasilitas.getText().trim());
             cs.execute();
 
             NotifUtil.show(txtNamaFasilitas, NotifUtil.Type.SUCCESS, "Fasilitas berhasil ditambahkan!",
@@ -127,8 +95,6 @@ public class CrudFasilitas implements Initializable {
                         setClose();
                         loadTable();
                     });
-        } catch (NumberFormatException e) {
-            notif(NotifUtil.Type.WARNING, "Jumlah harus berupa angka!");
         } catch (Exception e) {
             notif(NotifUtil.Type.ERROR, "Gagal menyimpan: " + e.getMessage());
         } finally {
@@ -146,11 +112,9 @@ public class CrudFasilitas implements Initializable {
 
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_UpdateFasilitas(?, ?, ?, ?)}");
+            CallableStatement cs = k.conn.prepareCall("{call sp_UpdateFasilitas(?, ?)}");
             cs.setString(1, txtId.getText());
             cs.setString(2, txtNamaFasilitas.getText().trim());
-            cs.setInt(3, Integer.parseInt(txtJumlah.getText().trim()));
-            cs.setString(4, txtDeskripsi.getText().trim());
             cs.execute();
 
             NotifUtil.show(txtNamaFasilitas, NotifUtil.Type.SUCCESS, "Fasilitas berhasil diubah!",
@@ -158,8 +122,6 @@ public class CrudFasilitas implements Initializable {
                         setClose();
                         loadTable();
                     });
-        } catch (NumberFormatException e) {
-            notif(NotifUtil.Type.WARNING, "Jumlah harus berupa angka!");
         } catch (Exception e) {
             notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
         } finally {
@@ -189,7 +151,7 @@ public class CrudFasilitas implements Initializable {
                                     loadTable();
                                 });
                     } catch (Exception e) {
-                        notif(NotifUtil.Type.ERROR, "Gagal menghapus: " + e.getMessage());
+                        notif(NotifUtil.Type.ERROR, "Gagal menghapus (mungkin masih dipakai di beberapa villa): " + e.getMessage());
                     } finally {
                         try { k.conn.close(); } catch (Exception ignored) {}
                     }
@@ -201,105 +163,40 @@ public class CrudFasilitas implements Initializable {
         setClose();
     }
 
-    // Villa di table cuma kasih NAMA, jadi pas edit kita disable combo Villa
-    // (karena sp_UpdateFasilitas juga gak nerima ganti Villa) dan cuma tampilin info-nya.
     private void populateForm(Fasilitas f) {
         txtId.setText(f.getIdFasilitas());
         txtNamaFasilitas.setText(f.getNamaFasilitas());
-        txtJumlah.setText(String.valueOf(f.getJumlah()));
-        txtDeskripsi.setText(f.getDeskripsi());
-
-        selectComboByName(cbVilla, f.getNamaVilla());
-        cbVilla.setDisable(true);
 
         btnSimpan.setDisable(true);
         btnUbah.setDisable(false);
         btnHapus.setDisable(false);
     }
 
-    private void selectComboByName(ComboBox<String> combo, String nama) {
-        for (String item : combo.getItems()) {
-            if (item.endsWith(" - " + nama)) {
-                combo.setValue(item);
-                return;
-            }
-        }
-    }
-
-    private String getIdFromCombo(String comboValue) {
-        if (comboValue == null) return null;
-        return comboValue.split(" - ")[0];
-    }
-
     private void setClose() {
         txtId.clear();
         txtNamaFasilitas.clear();
-        txtJumlah.clear();
-        txtDeskripsi.clear();
-        cbVilla.setValue(null);
-        cbVilla.setDisable(false);
         tableFasilitas.getSelectionModel().clearSelection();
 
         btnSimpan.setDisable(false);
         btnUbah.setDisable(true);
         btnHapus.setDisable(true);
-        generateIdVilla();
     }
 
-    // ===== VALIDASI =====
-    // - Nama Fasilitas : wajib diisi, tidak boleh mengandung angka
-    // - Jumlah         : wajib diisi, harus angka penuh (tidak boleh mengandung huruf/simbol)
-    // - Deskripsi      : opsional, kalau diisi tidak boleh mengandung angka
+    // Nama Fasilitas: wajib diisi, tidak boleh mengandung angka
     private boolean validasi() {
-        if (cbVilla.getValue() == null || txtNamaFasilitas.getText().trim().isEmpty() ||
-                txtJumlah.getText().trim().isEmpty()) {
-            notif(NotifUtil.Type.WARNING, "Villa, Nama Fasilitas, dan Jumlah wajib diisi!");
+        String nama = txtNamaFasilitas.getText().trim();
+        if (nama.isEmpty()) {
+            notif(NotifUtil.Type.WARNING, "Nama Fasilitas wajib diisi!");
             return false;
         }
-
-        String nama = txtNamaFasilitas.getText().trim();
-        String jumlah = txtJumlah.getText().trim();
-        String deskripsi = txtDeskripsi.getText().trim();
-
-        // Nama Fasilitas: tidak boleh mengandung angka
         if (!nama.matches("^[^0-9]+$")) {
             notif(NotifUtil.Type.WARNING, "Nama Fasilitas tidak boleh mengandung angka!");
             return false;
         }
-
-        // Jumlah: harus angka penuh, tidak boleh ada huruf/karakter lain
-        if (!jumlah.matches("^[0-9]+$")) {
-            notif(NotifUtil.Type.WARNING, "Jumlah harus berupa angka dan tidak boleh mengandung huruf!");
-            return false;
-        }
-
-        // Deskripsi: kalau diisi, tidak boleh mengandung angka
-        if (!deskripsi.isEmpty() && !deskripsi.matches("^[^0-9]+$")) {
-            notif(NotifUtil.Type.WARNING, "Deskripsi tidak boleh mengandung angka!");
-            return false;
-        }
-
         return true;
     }
 
     private void notif(NotifUtil.Type type, String msg) {
         NotifUtil.show(txtNamaFasilitas, type, msg);
-    }
-
-    public void generateIdVilla() {
-        Koneksi k = new Koneksi();
-        try {
-            String sql = "SELECT fnNextIdFasilitas() AS IdFasilitas";
-            PreparedStatement ps = k.conn.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-                txtId.setText(rs.getString("IdFasilitas"));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
-        }
     }
 }
