@@ -38,7 +38,7 @@
                   styleClass="hero-card"
                   onMouseClicked="#handleKaryawan">
                 <Label text="🛠" styleClass="hero-icon"/>
-                <Label text="Karyawan" textFill="#1565C0">
+                <Label text="SuperAdmin" textFill="#1565C0">
                     <font>
                         <Font name="System Bold" size="20"/>
                     </font>

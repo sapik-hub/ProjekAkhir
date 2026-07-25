@@ -12,21 +12,13 @@ public class Koneksi {
     public Koneksi() {
 
         try {
-            String url =
-                    "jdbc:sqlserver://LAPTOP-CH8RQ547\\SQLEXPRESS;" +
-                            "databaseName=VillaNesia;" +
-                            "user=sa;" +
-                            "password=popo;" +
-                            "encrypt=false;" +
-                            "trustServerCertificate=true;";
-
+            String url = "jdbc:sqlserver://MAULINA\\SQLEXPRESS:64358;databaseName=VillaStay;User=sa;password=mochimochi;trustServerCertificate=true";
             conn = DriverManager.getConnection(url);
             stat = conn.createStatement();
-
+            System.out.println("Connected to database su-ccessfully");
         } catch (Exception e) {
-            System.out.println("Koneksi gagal!"+ e);
+            System.out.println("Error ketika connect ke Database " + e);
         }
-
     }
 
     public static void main(String[] args) {

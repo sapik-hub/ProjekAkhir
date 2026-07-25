@@ -20,19 +20,19 @@
 
             <Region prefHeight="25"/>
 
-            <Button fx:id="btnKaryawan" text="Karyawan 👤" onAction="#handleKaryawan"
+            <Button fx:id="btnKaryawan" text="SuperAdmin" onAction="#handleKaryawan"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     style="-fx-background-color: white; -fx-text-fill: #1565C0; -fx-background-radius: 8; -fx-font-weight: bold; -fx-cursor: hand;"/>
 
             <Region prefHeight="8"/>
 
-            <Button fx:id="btnPemilik" text="Pemilik 🏘" onAction="#handlePemilik"
+            <Button fx:id="btnPemilik" text="Pemilik" onAction="#handlePemilik"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     style="-fx-background-color: transparent; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-cursor: hand;"/>
 
             <Region prefHeight="8"/>
 
-            <Button fx:id="btnPenyewa" text="Penyewa 🔑" onAction="#handlePenyewa"
+            <Button fx:id="btnPenyewa" text="Penyewa" onAction="#handlePenyewa"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     style="-fx-background-color: transparent; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-cursor: hand;"/>
 
@@ -42,13 +42,13 @@
 
             <Region prefHeight="8"/>
 
-            <Button fx:id="btnTransaksiBooking" text="Transaksi Booking 📖" onAction="#handleTransaksiBooking"
+            <Button fx:id="btnTransaksiBooking" text="Transaksi Booking " onAction="#handleTransaksiBooking"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     style="-fx-background-color: transparent; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-cursor: hand;"/>
 
             <Region prefHeight="8"/>
 
-            <Button fx:id="btnTransaksiRefund" text="Transaksi Refund 💸" onAction="#handleTransaksiRefund"
+            <Button fx:id="btnTransaksiRefund" text="Transaksi Refund" onAction="#handleTransaksiRefund"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     style="-fx-background-color: transparent; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-cursor: hand;"/>
 

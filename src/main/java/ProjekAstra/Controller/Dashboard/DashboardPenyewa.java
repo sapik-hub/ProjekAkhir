@@ -229,7 +229,7 @@ public class DashboardPenyewa {
     private void renderBubble(List<Villa> list) {
         bubbleContainer.getChildren().clear();
         if (list.isEmpty()) {
-            Label kosong = new Label("Villa tidak ditemukan 🙁");
+            Label kosong = new Label("Villa tidak ditemukan");
             kosong.getStyleClass().add("bubble-empty");
             bubbleContainer.getChildren().add(kosong);
             return;

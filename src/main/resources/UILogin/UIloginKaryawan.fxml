@@ -28,7 +28,7 @@
                 </font>
             </Label>
 
-            <Label text="Akun Karyawan" styleClass="brand-subtitle"/>
+            <Label text="Akun SuperAdmin" styleClass="brand-subtitle"/>
 
             <!-- Toggle -->
             <HBox alignment="CENTER"

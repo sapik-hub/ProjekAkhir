@@ -363,3 +363,70 @@
     -fx-text-fill: #3B2A20;
     -fx-font-weight: bold;
 }
+
+.refund-table {
+    -fx-background-color: white;
+    -fx-control-inner-background: white;
+    -fx-table-cell-border-color: #E0E0E0;
+    -fx-border-color: #D6D6D6;
+    -fx-border-width: 1px;
+}
+
+.refund-table .virtual-flow {
+    -fx-background-color: white;
+}
+
+.refund-table .virtual-flow .clipped-container {
+    -fx-background-color: white;
+}
+
+.refund-table .virtual-flow .sheet {
+    -fx-background-color: white;
+}
+
+.refund-table .column-header-background {
+    -fx-background-color: #E5E5E5;
+}
+
+.refund-table .column-header {
+    -fx-background-color: #E5E5E5;
+    -fx-border-color: #D0D0D0;
+    -fx-border-width: 0 1px 1px 0;
+}
+
+.refund-table .column-header .label {
+    -fx-text-fill: #333333;
+    -fx-font-weight: bold;
+    -fx-alignment: CENTER;
+}
+
+.refund-table .table-cell {
+    -fx-background-color: white;
+    -fx-text-fill: #333333;
+    -fx-border-color: #E5E5E5;
+    -fx-border-width: 0 1px 1px 0;
+}
+
+.refund-table .table-row-cell {
+    -fx-background-color: white;
+}
+
+.refund-table .table-row-cell:even {
+    -fx-background-color: white;
+}
+
+.refund-table .table-row-cell:odd {
+    -fx-background-color: #FAFAFA;
+}
+
+.refund-table .table-row-cell:selected {
+    -fx-background-color: #E8F1FF;
+}
+
+.refund-table .table-row-cell:selected .table-cell {
+    -fx-text-fill: #333333;
+}
+
+.refund-table .placeholder .label {
+    -fx-text-fill: #555555;
+}
