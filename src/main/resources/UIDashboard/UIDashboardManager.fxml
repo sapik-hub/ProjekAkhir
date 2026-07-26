@@ -5,7 +5,7 @@
 <?import javafx.scene.text.Font?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="ProjekAstra.Controller.Dashboard.DashboardPemilik"
+            fx:controller="ProjekAstra.Controller.Dashboard.DashboardManager"
             styleClass="bg-soft"
             stylesheets="@../css/villa-theme.css">
 
@@ -20,19 +20,19 @@
 
             <Region prefHeight="25"/>
 
-            <Button fx:id="btnVilla" text="🏠  Villa" onAction="#handleVilla"
+            <Button fx:id="btnVilla" text="Villa" onAction="#handleVilla"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     styleClass="sidebar-menu-btn-active"/>
 
             <Region prefHeight="8"/>
 
-            <Button fx:id="btnKategori" text="Kategori Villa 🏡" onAction="#handleKategori"
+            <Button fx:id="btnKategori" text="Kategori Villa" onAction="#handleKategori"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     styleClass="sidebar-menu-btn"/>
 
             <Region prefHeight="8"/>
 
-            <Button fx:id="btnFasilitas" text="Fasilitas ⭐" onAction="#handleFasilitas"
+            <Button fx:id="btnFasilitas" text="Fasilitas" onAction="#handleFasilitas"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
                     styleClass="sidebar-menu-btn"/>
         </VBox>

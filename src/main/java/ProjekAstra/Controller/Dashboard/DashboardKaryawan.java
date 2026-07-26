@@ -19,9 +19,6 @@ public class DashboardKaryawan {
     private Label lblJudul;
 
     @FXML
-    private Button btnKaryawan;
-
-    @FXML
     private Button btnPemilik;
 
     @FXML
@@ -45,18 +42,9 @@ public class DashboardKaryawan {
 
     @FXML
     public void initialize() {
-        handleKaryawan();
+        handlePenyewa();
     }
 
-
-    @FXML
-    private void handleKaryawan() {
-        loadContent(
-                "/UICrud/UICrudKaryawan.fxml",
-                "Data Karyawan"
-        );
-        setActiveButton(btnKaryawan);
-    }
     @FXML
     private void handlePemilik() {
         loadContent(
@@ -107,7 +95,6 @@ public class DashboardKaryawan {
     }
     @FXML
     private void handleTransaksiRefund() {
-        System.out.println("Membuka halaman Transaksi Refund");
         loadContent(
                 "/UITransaksi/Refund.fxml",
                 "Transaksi Refund"
@@ -149,9 +136,6 @@ public class DashboardKaryawan {
                         "-fx-font-weight: bold;" +
                         "-fx-cursor: hand;";
 
-        btnKaryawan.setStyle(
-                btnKaryawan == active ? aktif : nonAktif
-        );
         btnPemilik.setStyle(
                 btnPemilik == active ? aktif : nonAktif
         );

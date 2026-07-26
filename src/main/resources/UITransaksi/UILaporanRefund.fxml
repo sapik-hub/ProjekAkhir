@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      spacing="15" alignment="TOP_LEFT">
+    <padding><Insets top="10" bottom="10" left="10" right="10"/></padding>
+
+    <Label text="Laporan Refund">
+        <font><Font name="System Bold" size="18"/></font>
+    </Label>
+
+    <Label text="TODO: tampilkan tabel/ringkasan laporan refund di sini."
+           style="-fx-font-size: 13px; -fx-text-fill: #555555;"/>
+
+</VBox>

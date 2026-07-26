@@ -7,6 +7,7 @@ public class Session {
 
     private static String idKaryawan;
     private static String namaKaryawan;
+    private static String roleKaryawan;
 
     private static String idPenyewa;
     private static String namaPenyewa;
@@ -33,12 +34,22 @@ public class Session {
         namaKaryawan = nama;
     }
 
+    public static void setKaryawan(String id, String nama, String role) {
+        idKaryawan = id;
+        namaKaryawan = nama;
+        roleKaryawan = role;
+    }
+
     public static String getIdKaryawan() {
         return idKaryawan;
     }
 
     public static String getNamaKaryawan() {
         return namaKaryawan;
+    }
+
+    public static String getRoleKaryawan() {
+        return roleKaryawan;
     }
 
     // ===== PENYEWA =====
@@ -61,6 +72,7 @@ public class Session {
         namaPemilik = null;
         idKaryawan = null;
         namaKaryawan = null;
+        roleKaryawan = null;
         idPenyewa = null;
         namaPenyewa = null;
     }

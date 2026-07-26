@@ -3,6 +3,7 @@ package ProjekAstra.Controller.Login;
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.MainApp;
 import ProjekAstra.Util.NotifUtil;
+import ProjekAstra.Util.Session;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -72,10 +73,30 @@ public class LoginKaryawan implements Initializable {
             return;
         }
 
+        // ================= AKUN TEST CEPAT (SEMENTARA) =================
+        // Dipakai untuk coba dashboard SuperAdmin & Manager tanpa perlu
+        // setting Role di database dulu. Hapus/comment blok ini kalau
+        // sudah pakai data Role asli dari tabel Karyawan.
+        if (username.equals("s") && password.equals("a")) {
+            Session.setKaryawan("TEST-SA", "SuperAdmin (Test)", "SuperAdmin");
+            NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
+                    "Login berhasil! Selamat datang, SuperAdmin👤",
+                    () -> MainApp.switchScene("/UIDashboard/UIDashboardKaryawan.fxml"));
+            return;
+        }
+        if (username.equals("a") && password.equals("s")) {
+            Session.setKaryawan("TEST-MGR", "Manager (Test)", "Manager");
+            NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
+                    "Login berhasil! Selamat datang, Manager👤",
+                    () -> MainApp.switchScene("/UIDashboard/UIDashboardPenyewa.fxml"));
+            return;
+        }
+        // =================================================================
+
         Koneksi k = new Koneksi();
 
         try {
-            String sql = "SELECT Nama_Karyawan, Status, Role FROM Karyawan WHERE Username=? AND Password=? AND Status='AKTIF'";
+            String sql = "SELECT Id_Karyawan, Nama_Karyawan, Status, Role FROM Karyawan WHERE Username=? AND Password=? AND Status='AKTIF'";
 
             PreparedStatement ps = k.conn.prepareStatement(sql);
             ps.setString(1, username);
@@ -84,10 +105,22 @@ public class LoginKaryawan implements Initializable {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
+                String id = rs.getString("Id_Karyawan");
                 String nama = rs.getString("Nama_Karyawan");
+                String role = rs.getString("Role");
+
+                Session.setKaryawan(id, nama, role);
+
+                String tujuanDashboard = getDashboardByRole(role);
+
+                if (tujuanDashboard == null) {
+                    notifLogin(NotifUtil.Type.ERROR, "Role '" + role + "' tidak dikenali, hubungi admin!");
+                    return;
+                }
+
                 NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
                         ("Login berhasil! Selamat datang, " + nama + "👤"),
-                        () -> MainApp.switchScene("/UIDashboard/UIDashboardKaryawan.fxml"));
+                        () -> MainApp.switchScene(tujuanDashboard));
             } else {
                 notifLogin(NotifUtil.Type.ERROR, "Username/Password salah atau akun tidak aktif!");
             }
@@ -96,6 +129,24 @@ public class LoginKaryawan implements Initializable {
             notifLogin(NotifUtil.Type.ERROR, "Gagal terhubung ke database : " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
+        }
+    }
+
+    /**
+     * Menentukan tujuan dashboard berdasarkan Role yang tersimpan di database.
+     * Sesuaikan value String di sini kalau penamaan Role di tabel Karyawan berbeda.
+     */
+    private String getDashboardByRole(String role) {
+        if (role == null) return null;
+
+        switch (role.trim().toLowerCase()) {
+            case "superadmin":
+            case "admin":
+                return "/UIDashboard/UIDashboardKaryawan.fxml";
+            case "manager":
+                return "/UIDashboard/UIDashboardPenyewa.fxml";
+            default:
+                return null;
         }
     }
 
