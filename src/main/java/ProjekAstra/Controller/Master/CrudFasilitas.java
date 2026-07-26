@@ -18,11 +18,13 @@ import java.util.ResourceBundle;
 
 public class CrudFasilitas implements Initializable {
 
-    @FXML private TextField txtId, txtNamaFasilitas, txtCari;
+    @FXML private TextField txtId, txtNamaFasilitas, txtJumlah, txtCari;
+    @FXML private TextArea txtDeskripsi;
     @FXML private Button btnSimpan, btnUbah, btnHapus;
 
     @FXML private TableView<Fasilitas> tableFasilitas;
-    @FXML private TableColumn<Fasilitas, String> colId, colNamaFasilitas;
+    @FXML private TableColumn<Fasilitas, String> colId, colNamaFasilitas, colDeskripsi;
+    @FXML private TableColumn<Fasilitas, Integer> colJumlah;
 
     private final ObservableList<Fasilitas> listFasilitas = FXCollections.observableArrayList();
 
@@ -43,6 +45,8 @@ public class CrudFasilitas implements Initializable {
     private void setupTable() {
         colId.setCellValueFactory(new PropertyValueFactory<>("idFasilitas"));
         colNamaFasilitas.setCellValueFactory(new PropertyValueFactory<>("namaFasilitas"));
+        colJumlah.setCellValueFactory(new PropertyValueFactory<>("jumlah"));
+        colDeskripsi.setCellValueFactory(new PropertyValueFactory<>("deskripsi"));
     }
 
     private void loadTable() {
@@ -53,8 +57,11 @@ public class CrudFasilitas implements Initializable {
             ResultSet rs = cs.executeQuery();
             while (rs.next()) {
                 listFasilitas.add(new Fasilitas(
-                        rs.getString("IdFasilitas"),
-                        rs.getString("NamaFasilitas")
+                        rs.getString("Id_Fasilitas"),
+                        rs.getString("Nama_Fasilitas"),
+                        rs.getInt("Jumlah"),
+                        rs.getString("Deskripsi"),
+                        rs.getString("Status")
                 ));
             }
             tableFasilitas.setItems(listFasilitas);
@@ -86,8 +93,10 @@ public class CrudFasilitas implements Initializable {
 
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_InsertFasilitas(?)}");
+            CallableStatement cs = k.conn.prepareCall("{call sp_InsertFasilitas(?, ?, ?)}");
             cs.setString(1, txtNamaFasilitas.getText().trim());
+            cs.setInt(2, Integer.parseInt(txtJumlah.getText().trim()));
+            cs.setString(3, txtDeskripsi.getText().trim());
             cs.execute();
 
             NotifUtil.show(txtNamaFasilitas, NotifUtil.Type.SUCCESS, "Fasilitas berhasil ditambahkan!",
@@ -112,9 +121,11 @@ public class CrudFasilitas implements Initializable {
 
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_UpdateFasilitas(?, ?)}");
+            CallableStatement cs = k.conn.prepareCall("{call sp_UpdateFasilitas(?, ?, ?, ?)}");
             cs.setString(1, txtId.getText());
             cs.setString(2, txtNamaFasilitas.getText().trim());
+            cs.setInt(3, Integer.parseInt(txtJumlah.getText().trim()));
+            cs.setString(4, txtDeskripsi.getText().trim());
             cs.execute();
 
             NotifUtil.show(txtNamaFasilitas, NotifUtil.Type.SUCCESS, "Fasilitas berhasil diubah!",
@@ -166,6 +177,8 @@ public class CrudFasilitas implements Initializable {
     private void populateForm(Fasilitas f) {
         txtId.setText(f.getIdFasilitas());
         txtNamaFasilitas.setText(f.getNamaFasilitas());
+        txtJumlah.setText(String.valueOf(f.getJumlah()));
+        txtDeskripsi.setText(f.getDeskripsi());
 
         btnSimpan.setDisable(true);
         btnUbah.setDisable(false);
@@ -175,6 +188,8 @@ public class CrudFasilitas implements Initializable {
     private void setClose() {
         txtId.clear();
         txtNamaFasilitas.clear();
+        txtJumlah.clear();
+        txtDeskripsi.clear();
         tableFasilitas.getSelectionModel().clearSelection();
 
         btnSimpan.setDisable(false);
@@ -182,7 +197,7 @@ public class CrudFasilitas implements Initializable {
         btnHapus.setDisable(true);
     }
 
-    // Nama Fasilitas: wajib diisi, tidak boleh mengandung angka
+    // Validasi: Nama wajib diisi tanpa angka, Jumlah wajib angka >= 0
     private boolean validasi() {
         String nama = txtNamaFasilitas.getText().trim();
         if (nama.isEmpty()) {
@@ -191,6 +206,20 @@ public class CrudFasilitas implements Initializable {
         }
         if (!nama.matches("^[^0-9]+$")) {
             notif(NotifUtil.Type.WARNING, "Nama Fasilitas tidak boleh mengandung angka!");
+            return false;
+        }
+        if (txtJumlah.getText().trim().isEmpty()) {
+            notif(NotifUtil.Type.WARNING, "Jumlah wajib diisi!");
+            return false;
+        }
+        try {
+            int jumlah = Integer.parseInt(txtJumlah.getText().trim());
+            if (jumlah < 0) {
+                notif(NotifUtil.Type.WARNING, "Jumlah tidak boleh negatif!");
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            notif(NotifUtil.Type.WARNING, "Jumlah harus berupa angka!");
             return false;
         }
         return true;

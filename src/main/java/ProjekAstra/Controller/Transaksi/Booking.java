@@ -4,16 +4,19 @@ import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.Model.TransaksiBooking;
 import ProjekAstra.Util.ConfirmUtil;
 import ProjekAstra.Util.NotifUtil;
+import ProjekAstra.Util.Session;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import java.sql.Types;
 
 import java.net.URL;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
 
@@ -23,7 +26,7 @@ public class Booking implements Initializable {
     @FXML private TextArea txtCatatan;
     @FXML private ComboBox<String> cbPenyewa, cbVilla, cbStatus;
     @FXML private DatePicker dpCheckin, dpCheckout;
-    @FXML private Button btnSimpan, btnUbah, btnHapus;
+    @FXML private Button btnSimpan, btnKonfirmasi, btnHapus;
 
     @FXML private TableView<TransaksiBooking> tableBooking;
     @FXML private TableColumn<TransaksiBooking, String> colId, colPenyewa, colVilla, colStatus;
@@ -33,6 +36,11 @@ public class Booking implements Initializable {
 
     private final ObservableList<TransaksiBooking> listBooking = FXCollections.observableArrayList();
     private double hargaVillaTerpilih = 0;
+
+    // Urutan sesuai CHECK constraint di tabel TransaksiBooking - jangan diubah teksnya!
+    private static final String[] DAFTAR_STATUS = {
+            "Pending", "Dikonfirmasi", "Check In", "Check Out", "Selesai", "Dibatalkan"
+    };
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -48,7 +56,6 @@ public class Booking implements Initializable {
             if (b != null) populateForm(b);
         });
 
-        // Auto hitung Grand Harga tiap tanggal berubah
         dpCheckin.valueProperty().addListener((obs, oldVal, newVal) -> hitungGrandHarga());
         dpCheckout.valueProperty().addListener((obs, oldVal, newVal) -> hitungGrandHarga());
         cbVilla.valueProperty().addListener((obs, oldVal, newVal) -> {
@@ -68,12 +75,37 @@ public class Booking implements Initializable {
         colTamu.setCellValueFactory(new PropertyValueFactory<>("jumlahTamu"));
         colHarga.setCellValueFactory(new PropertyValueFactory<>("grandHarga"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("statusBooking"));
+
+        // Badge warna biar admin gampang liat mana yang masih Pending
+        colStatus.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                setText(status);
+                setStyle("-fx-font-weight: bold; -fx-text-fill: " + warnaStatus(status) + ";");
+            }
+        });
+    }
+
+    private String warnaStatus(String status) {
+        return switch (status) {
+            case "Pending" -> "#E0972C";
+            case "Dikonfirmasi" -> "#4A90D9";
+            case "Check In" -> "#2FA88C";
+            case "Check Out" -> "#8E6FCE";
+            case "Selesai" -> "#4CAF7D";
+            case "Dibatalkan" -> "#D9534F";
+            default -> "#4A5568";
+        };
     }
 
     private void setupStatusCombo() {
-        cbStatus.setItems(FXCollections.observableArrayList(
-                "Menunggu Konfirmasi", "Dikonfirmasi", "Check-In", "Check-Out", "Dibatalkan"
-        ));
+        cbStatus.setItems(FXCollections.observableArrayList(DAFTAR_STATUS));
     }
 
     private void loadComboPenyewa() {
@@ -92,11 +124,13 @@ public class Booking implements Initializable {
         }
     }
 
+    // Pakai daftar SEMUA villa (bukan cuma yang Tersedia), supaya villa yang lagi
+    // dibooking tetap muncul saat mode edit. Bentrok tanggal tetap dicegah di level SP.
     private void loadComboVilla() {
         cbVilla.getItems().clear();
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_GetAllVillaTersedia}");
+            CallableStatement cs = k.conn.prepareCall("{call sp_GetAllVilla}");
             ResultSet rs = cs.executeQuery();
             while (rs.next()) {
                 cbVilla.getItems().add(rs.getString("Id_Villa") + " - " + rs.getString("Nama_Villa"));
@@ -145,15 +179,15 @@ public class Booking implements Initializable {
             ResultSet rs = cs.executeQuery();
             while (rs.next()) {
                 listBooking.add(new TransaksiBooking(
-                        rs.getString("Id_trsBooking"),
+                        rs.getString("Id_TrxBooking"),
                         rs.getString("NamaPenyewa"),
-                        rs.getString("NamaVilla"),
+                        rs.getString("Nama_Villa"),
                         rs.getDate("Tanggal_Checkin").toLocalDate(),
-                        rs.getDate("Tanggal_CheckOut").toLocalDate(),
-                        rs.getInt("Jumlah_tamu"),
+                        rs.getDate("Tanggal_Checkout").toLocalDate(),
+                        rs.getInt("Jumlah_Tamu"),
                         rs.getDouble("Grand_Harga"),
                         rs.getString("Status_Booking"),
-                        rs.getDate("Tanggal_booking").toLocalDate()
+                        rs.getDate("Tanggal_Booking").toLocalDate()
                 ));
             }
             tableBooking.setItems(listBooking);
@@ -205,16 +239,29 @@ public class Booking implements Initializable {
         }
     }
 
+    // >>> Fungsi utama admin: konfirmasi/ubah status booking (Pending -> Dikonfirmasi -> ... dst)
+    // Villa otomatis ke-update statusnya lewat trigger trg_Booking_UpdateVillaStatus di DB.
     @FXML
-    private void handleUbah() {
+    private void handleKonfirmasi() {
         if (txtId.getText().isEmpty()) {
-            notif(NotifUtil.Type.WARNING, "Pilih data booking yang ingin diubah terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data booking yang ingin dikonfirmasi terlebih dahulu!");
             return;
         }
         if (!validasi()) return;
+        if (cbStatus.getValue() == null) {
+            notif(NotifUtil.Type.WARNING, "Pilih status booking terlebih dahulu!");
+            return;
+        }
 
+        ConfirmUtil.show(txtJumlahTamu,
+                "Ubah status booking " + txtId.getText() + " menjadi \"" + cbStatus.getValue() + "\"?",
+                this::prosesKonfirmasi);
+    }
+
+    private void prosesKonfirmasi() {
         Koneksi k = new Koneksi();
         try {
+            // 1. Update data booking (tanggal, villa, jumlah tamu, catatan)
             CallableStatement cs = k.conn.prepareCall("{call sp_UpdateBooking(?, ?, ?, ?, ?, ?)}");
             cs.setString(1, txtId.getText());
             cs.setString(2, getIdFromCombo(cbVilla.getValue()));
@@ -224,20 +271,21 @@ public class Booking implements Initializable {
             cs.setString(6, txtCatatan.getText().trim());
             cs.execute();
 
-            // update status terpisah kalau berubah
-            if (cbStatus.getValue() != null) {
-                CallableStatement csStatus = k.conn.prepareCall("{call sp_UpdateStatusBooking(?, ?)}");
-                csStatus.setString(1, txtId.getText());
-                csStatus.setString(2, cbStatus.getValue());
-                csStatus.execute();
-            }
+            // 2. Update status - Id_Karyawan diambil dari sesi staff yang lagi login
+            CallableStatement csStatus = k.conn.prepareCall("{call sp_UpdateStatusBooking(?, ?, ?)}");
+            csStatus.setString(1, txtId.getText());
+            String idKaryawan = Session.getIdKaryawan();
+            if (idKaryawan == null) csStatus.setNull(2, Types.VARCHAR);
+            else csStatus.setString(2, idKaryawan);
+            csStatus.setString(3, cbStatus.getValue());
+            csStatus.execute();
 
-            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.SUCCESS, "Booking berhasil diubah!",
+            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.SUCCESS, "Booking berhasil dikonfirmasi!",
                     () -> { setClose(); loadTable(); });
         } catch (NumberFormatException e) {
             notif(NotifUtil.Type.WARNING, "Jumlah tamu harus berupa angka!");
         } catch (Exception e) {
-            notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal mengonfirmasi: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -255,9 +303,12 @@ public class Booking implements Initializable {
                 () -> {
                     Koneksi k = new Koneksi();
                     try {
-                        CallableStatement cs = k.conn.prepareCall("{call sp_UpdateStatusBooking(?, ?)}");
+                        CallableStatement cs = k.conn.prepareCall("{call sp_UpdateStatusBooking(?, ?, ?)}");
                         cs.setString(1, txtId.getText());
-                        cs.setString(2, "Dibatalkan");
+                        String idKaryawan = Session.getIdKaryawan();
+                        if (idKaryawan == null) cs.setNull(2, Types.VARCHAR);
+                        else cs.setString(2, idKaryawan);
+                        cs.setString(3, "Dibatalkan");
                         cs.execute();
 
                         NotifUtil.show(txtJumlahTamu, NotifUtil.Type.SUCCESS, "Booking berhasil dibatalkan!",
@@ -281,8 +332,6 @@ public class Booking implements Initializable {
             notif(NotifUtil.Type.WARNING, "Pilih data booking yang ingin dicetak terlebih dahulu!");
             return;
         }
-        // Panggil sp_CetakStrukBooking dan tampilkan hasilnya di window/dialog struk
-        // (bagian layout struk & PrinterJob bisa saya buatkan terpisah kalau kamu mau lanjut ke sana)
         notif(NotifUtil.Type.SUCCESS, "Fitur cetak struk siap dihubungkan ke sp_CetakStrukBooking.");
     }
 
@@ -296,10 +345,11 @@ public class Booking implements Initializable {
         txtGrandHarga.setText(String.valueOf(b.getGrandHarga()));
         cbStatus.setValue(b.getStatusBooking());
 
-        cbPenyewa.setDisable(true); // penyewa gak boleh diganti pas edit
+        cbPenyewa.setDisable(true); // penyewa gak boleh diganti pas konfirmasi/edit
+        cbStatus.setDisable(false);
 
         btnSimpan.setDisable(true);
-        btnUbah.setDisable(false);
+        btnKonfirmasi.setDisable(false);
         btnHapus.setDisable(false);
     }
 
@@ -328,15 +378,15 @@ public class Booking implements Initializable {
         dpCheckin.setValue(null);
         dpCheckout.setValue(null);
         cbPenyewa.setDisable(false);
+        cbStatus.setDisable(true); // status cuma relevan pas mode konfirmasi/edit
         hargaVillaTerpilih = 0;
         tableBooking.getSelectionModel().clearSelection();
 
         btnSimpan.setDisable(false);
-        btnUbah.setDisable(true);
+        btnKonfirmasi.setDisable(true);
         btnHapus.setDisable(true);
     }
 
-    // ===== VALIDASI =====
     private boolean validasi() {
         if (cbPenyewa.getValue() == null || cbVilla.getValue() == null ||
                 dpCheckin.getValue() == null || dpCheckout.getValue() == null ||

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="ProjekAstra.Controller.Master.DialogTambahFasilitas"
+      spacing="12" styleClass="bg-soft, card"
+      stylesheets="@../css/villa-theme.css">
+
+    <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+    <Label text="Tambah Fasilitas Villa" styleClass="brand-title">
+        <font><Font name="System Bold" size="16"/></font>
+    </Label>
+
+    <ComboBox fx:id="cbFasilitas" promptText="Pilih Fasilitas" maxWidth="Infinity" styleClass="input-field"/>
+    <TextField fx:id="txtQty" promptText="Qty" styleClass="input-field"/>
+
+    <Region prefHeight="8"/>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Batal" onAction="#handleBatal" styleClass="btn-neutral" prefWidth="90"/>
+        <Button fx:id="btnSimpanFasilitas" text="Simpan" onAction="#handleSimpan" styleClass="btn-primary" prefWidth="90"/>
+    </HBox>
+
+</VBox>

@@ -45,7 +45,7 @@
                 </ScrollPane>
             </VBox>
 
-            <!-- ===== LAYAR 2: Overlay (detail villa / form booking / hasil booking) ===== -->
+            <!-- ===== LAYAR 2: Overlay (detail villa / verifikasi / registrasi / form booking) ===== -->
             <StackPane fx:id="overlayPane" styleClass="overlay-dim" visible="false" managed="false">
 
                 <!-- BUBBLE 1: Detail villa -->
@@ -77,11 +77,66 @@
 
                     <HBox spacing="15" alignment="CENTER">
                         <Button text="⬅ Kembali" onAction="#handleKembaliBubble" styleClass="btn-kembali" prefWidth="150"/>
-                        <Button text="📖 Booking" onAction="#handleBooking" styleClass="btn-booking" prefWidth="150"/>
+                        <Button text="📖 Booking" onAction="#handleMulaiVerifikasi" styleClass="btn-booking" prefWidth="150"/>
                     </HBox>
                 </VBox>
 
-                <!-- BUBBLE 2: Form booking (langsung inline, tanpa fx:include) -->
+                <!-- BUBBLE 2: Verifikasi penyewa (sudah pernah / belum pernah) -->
+                <VBox fx:id="verifBubble" styleClass="detail-bubble" alignment="CENTER" spacing="16"
+                      maxWidth="420" maxHeight="420" prefWidth="420" visible="false" managed="false">
+                    <padding><Insets top="35" bottom="30" left="35" right="35"/></padding>
+
+                    <Label text="👋 Selamat Datang!" styleClass="detail-title"/>
+                    <Label text="Apakah Anda sudah pernah booking di sini sebelumnya?"
+                           styleClass="detail-sub" wrapText="true" textAlignment="CENTER"/>
+
+                    <HBox spacing="15" alignment="CENTER">
+                        <Button text="Sudah Pernah" onAction="#handlePilihSudahPernah" styleClass="btn-booking" prefWidth="170"/>
+                        <Button text="Belum Pernah" onAction="#handlePilihBelumPernah" styleClass="btn-kembali" prefWidth="170"/>
+                    </HBox>
+
+                    <Separator/>
+
+                    <Label text="Masukkan Nomor Telepon Anda" styleClass="detail-label-kecil"/>
+                    <TextField fx:id="txtNoTeleponCari" styleClass="input-field" promptText="08xxxxxxxxxx" maxWidth="Infinity"/>
+
+                    <Region VBox.vgrow="ALWAYS"/>
+
+                    <Button text="⬅ Kembali" onAction="#handleKembaliDariVerif" styleClass="btn-kembali" maxWidth="Infinity"/>
+                </VBox>
+
+                <!-- BUBBLE 3: Registrasi penyewa baru -->
+                <VBox fx:id="registrasiBubble" styleClass="detail-bubble" alignment="CENTER" spacing="10"
+                      maxWidth="440" maxHeight="640" prefWidth="440" visible="false" managed="false">
+                    <padding><Insets top="30" bottom="25" left="35" right="35"/></padding>
+
+                    <Label text="Isi Data Diri" styleClass="detail-title"/>
+                    <Label text="Data ini akan disimpan untuk booking Anda" styleClass="detail-sub"/>
+
+                    <Label text="Nama Lengkap" styleClass="detail-label-kecil"/>
+                    <TextField fx:id="txtRegNama" styleClass="input-field"/>
+
+                    <Label text="Nomor Telepon" styleClass="detail-label-kecil"/>
+                    <TextField fx:id="txtRegNoTelp" styleClass="input-field"/>
+
+                    <Label text="Nomor KTP" styleClass="detail-label-kecil"/>
+                    <TextField fx:id="txtRegNoKtp" styleClass="input-field"/>
+
+                    <Label text="Tanggal Lahir" styleClass="detail-label-kecil"/>
+                    <DatePicker fx:id="dpRegTglLahir" styleClass="input-field" maxWidth="Infinity"/>
+
+                    <Label text="Alamat" styleClass="detail-label-kecil"/>
+                    <TextArea fx:id="txtRegAlamat" styleClass="input-field" prefHeight="55" wrapText="true"/>
+
+                    <Region VBox.vgrow="ALWAYS"/>
+
+                    <HBox spacing="15" alignment="CENTER">
+                        <Button text="⬅ Kembali" onAction="#handleKembaliDariRegistrasi" styleClass="btn-kembali" prefWidth="150"/>
+                        <Button text="Simpan &amp; Lanjut" onAction="#handleSimpanRegistrasi" styleClass="btn-booking" prefWidth="180"/>
+                    </HBox>
+                </VBox>
+
+                <!-- BUBBLE 4: Form booking (identitas penyewa sudah otomatis dari verifikasi/registrasi) -->
                 <VBox fx:id="bookingPane" styleClass="detail-bubble" alignment="CENTER" spacing="12"
                       maxWidth="440" maxHeight="680" prefWidth="440" visible="false" managed="false">
 
@@ -90,8 +145,8 @@
                     <Label text="Form Booking Villa" styleClass="detail-title"/>
                     <Label fx:id="lblVillaTerpilih" styleClass="detail-sub" wrapText="true"/>
 
-                    <Label text="Pilih Penyewa" styleClass="detail-label-kecil"/>
-                    <ComboBox fx:id="cbPenyewa" styleClass="input-field" maxWidth="Infinity" promptText="Pilih penyewa..."/>
+                    <Label text="Atas Nama" styleClass="detail-label-kecil"/>
+                    <Label fx:id="lblPenyewaAktif" styleClass="detail-harga" wrapText="true"/>
 
                     <Label text="Alamat" styleClass="detail-label-kecil"/>
                     <TextArea fx:id="txtAlamatBooking" styleClass="input-field" prefHeight="50" wrapText="true"/>
@@ -124,21 +179,6 @@
                         <Button text="⬅ Kembali" onAction="#handleKembaliBooking" styleClass="btn-kembali" prefWidth="150"/>
                         <Button text="📖 Booking Sekarang" onAction="#handleBookingSekarang" styleClass="btn-booking" prefWidth="180"/>
                     </HBox>
-                </VBox>
-
-                <!-- BUBBLE 3: Popup hasil booking (pengganti Alert) -->
-                <VBox fx:id="resultBubble" styleClass="detail-bubble" alignment="CENTER" spacing="16"
-                      maxWidth="400" prefWidth="400" maxHeight="360" prefHeight="360"
-                      visible="false" managed="false">
-                    <padding><Insets top="34" bottom="30" left="30" right="30"/></padding>
-
-                    <Label text="✅" style="-fx-font-size: 42px;"/>
-                    <Label text="Booking Berhasil!" styleClass="detail-title"/>
-                    <Label text="Catat / tunjukkan kode ini ke resepsionis saat check-in:"
-                           styleClass="detail-sub" wrapText="true" textAlignment="CENTER"/>
-                    <Label fx:id="lblKodeBooking" styleClass="detail-harga" style="-fx-font-size: 26px;"/>
-
-                    <Button text="Tutup" styleClass="btn-booking" onAction="#handleTutupResult" maxWidth="Infinity"/>
                 </VBox>
 
             </StackPane>

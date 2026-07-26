@@ -55,7 +55,7 @@
                   styleClass="hero-card"
                   onMouseClicked="#handlePenyewa">
                 <Label text="👤" styleClass="hero-icon"/>
-                <Label text="Penyewa" textFill="#1565C0">
+                <Label text="KIOSK" textFill="#1565C0">
                     <font>
                         <Font name="System Bold" size="20"/>
                     </font>
@@ -66,24 +66,6 @@
                     </font>
                 </Label>
             </VBox>
-
-            <!-- Pemilik -->
-            <VBox fx:id="cardPemilik" alignment="CENTER" spacing="12" prefWidth="250" prefHeight="200"
-                  styleClass="hero-card"
-                  onMouseClicked="#handlePemilik">
-                <Label text="🏘" styleClass="hero-icon"/>
-                <Label text="Pemilik" textFill="#1565C0">
-                    <font>
-                        <Font name="System Bold" size="20"/>
-                    </font>
-                </Label>
-                <Label text="Kelola properti vila Anda" textFill="#616161" textAlignment="CENTER" wrapText="true">
-                    <font>
-                        <Font size="13"/>
-                    </font>
-                </Label>
-            </VBox>
-
         </HBox>
 
         <Label text="🏠 © 2026 Villa Stay — Penyewaan Vila Terpercaya 🏠" styleClass="footer-text">

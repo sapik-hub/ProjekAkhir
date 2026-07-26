@@ -2,11 +2,13 @@ package ProjekAstra.Controller.Dashboard;
 
 import ProjekAstra.MainApp;
 import ProjekAstra.Model.Villa;
-import ProjekAstra.Model.VillaFasilitas;
+import ProjekAstra.Model.DetailFasilitas;
 import ProjekAstra.Model.Penyewa;
 import ProjekAstra.Koneksi.Koneksi;
+import ProjekAstra.Util.ConfirmUtil;
 import ProjekAstra.Util.FileUtil;
 import ProjekAstra.Util.NotifUtil;
+import ProjekAstra.Util.Session;
 
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
@@ -18,7 +20,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -28,7 +29,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
-import javafx.util.StringConverter;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -36,6 +36,8 @@ import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.Types;
 import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -63,10 +65,22 @@ public class DashboardPenyewa {
     @FXML private ImageView imgDetailFoto;
     @FXML private FlowPane fasilitasContainer;
 
-    // ---- booking bubble (sudah inline, bukan fx:include lagi) ----
+    // ---- verifikasi bubble ----
+    @FXML private VBox verifBubble;
+    @FXML private TextField txtNoTeleponCari;
+
+    // ---- registrasi bubble ----
+    @FXML private VBox registrasiBubble;
+    @FXML private TextField txtRegNama;
+    @FXML private TextField txtRegNoTelp;
+    @FXML private TextField txtRegNoKtp;
+    @FXML private DatePicker dpRegTglLahir;
+    @FXML private TextArea txtRegAlamat;
+
+    // ---- booking bubble ----
     @FXML private VBox bookingPane;
     @FXML private Label lblVillaTerpilih;
-    @FXML private ComboBox<Penyewa> cbPenyewa;
+    @FXML private Label lblPenyewaAktif;
     @FXML private ComboBox<String> cbMetodePembayaran;
     @FXML private TextArea txtAlamatBooking;
     @FXML private TextArea txtCatatan;
@@ -75,13 +89,11 @@ public class DashboardPenyewa {
     @FXML private TextField txtJumlahTamu;
     @FXML private Label lblGrandHarga;
 
-    // ---- result bubble ----
-    @FXML private VBox resultBubble;
-    @FXML private Label lblKodeBooking;
-
     private final List<Villa> daftarVilla = new ArrayList<>();
-    private final List<Penyewa> daftarPenyewa = new ArrayList<>();
     private Villa villaTerpilih;
+
+    // >>> Penyewa yang aktif di sesi kiosk saat ini (hasil dari verifikasi/registrasi)
+    private Penyewa penyewaAktif;
 
     private static final NumberFormat RUPIAH =
             NumberFormat.getCurrencyInstance(new Locale("id", "ID"));
@@ -91,42 +103,16 @@ public class DashboardPenyewa {
         muatDaftarVilla();
         renderBubble(daftarVilla);
 
-        muatDaftarPenyewa();
-        setupComboPenyewa();
         setupComboMetodePembayaran();
 
         dpCheckin.valueProperty().addListener((o, old, val) -> hitungGrandHarga());
         dpCheckout.valueProperty().addListener((o, old, val) -> hitungGrandHarga());
     }
 
-    private void setupComboPenyewa() {
-        cbPenyewa.setConverter(new StringConverter<>() {
-            @Override
-            public String toString(Penyewa p) {
-                return p == null ? "" : p.getNama() + " (" + p.getIdPenyewa() + ")";
-            }
-            @Override
-            public Penyewa fromString(String s) { return null; }
-        });
-        cbPenyewa.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(Penyewa p, boolean empty) {
-                super.updateItem(p, empty);
-                setText(empty || p == null ? null : p.getNama() + " (" + p.getIdPenyewa() + ")");
-            }
-        });
-        cbPenyewa.valueProperty().addListener((obs, old, val) -> {
-            if (val != null) {
-                txtAlamatBooking.setText(val.getAlamat() == null ? "" : val.getAlamat());
-            }
-        });
-    }
-
     private void setupComboMetodePembayaran() {
         cbMetodePembayaran.getItems().setAll("Cash", "Transfer Bank", "QRIS");
     }
 
-    // ====== ambil semua villa dari database ======
     private void muatDaftarVilla() {
         daftarVilla.clear();
         Koneksi k = new Koneksi();
@@ -136,14 +122,13 @@ public class DashboardPenyewa {
 
             while (rs.next()) {
                 daftarVilla.add(new Villa(
-                        rs.getString("IdVilla"),
-                        rs.getString("NamaPemilik"),
-                        rs.getString("NamaKategori"),
-                        rs.getString("NamaVilla"),
+                        rs.getString("Id_Villa"),
+                        rs.getString("Nama_Kategori"),
+                        rs.getString("Nama_Villa"),
                         rs.getInt("Kapasitas"),
                         rs.getBigDecimal("HargaWeekday"),
                         rs.getBigDecimal("HargaWeekend"),
-                        rs.getString("AlamatVilla"),
+                        rs.getString("Alamat_Villa"),
                         rs.getString("Foto"),
                         rs.getString("Status")
                 ));
@@ -155,36 +140,8 @@ public class DashboardPenyewa {
         }
     }
 
-    // ====== ambil semua penyewa (buat combo box di pane booking) ======
-    private void muatDaftarPenyewa() {
-        daftarPenyewa.clear();
-        Koneksi k = new Koneksi();
-        try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_GetAllPenyewa}");
-            ResultSet rs = cs.executeQuery();
-
-            while (rs.next()) {
-                daftarPenyewa.add(new Penyewa(
-                        rs.getString("IdPenyewa"),
-                        rs.getString("Nama"),
-                        rs.getString("NoTelp"),
-                        rs.getString("NoKtp"),
-                        rs.getDate("TglLahir") == null ? null : rs.getDate("TglLahir").toLocalDate(),
-                        rs.getString("Alamat"),
-                        rs.getString("Username")
-                ));
-            }
-        } catch (Exception e) {
-            NotifUtil.show(bubbleContainer, NotifUtil.Type.ERROR, "Gagal memuat data penyewa: " + e.getMessage());
-        } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
-        }
-    }
-
-    // ====== ambil fasilitas by IdVilla dari database ======
-    // ====== ambil fasilitas by IdVilla dari database ======
-    private List<VillaFasilitas> muatFasilitas(String idVilla) {
-        List<VillaFasilitas> hasil = new ArrayList<>();
+    private List<DetailFasilitas> muatFasilitas(String idVilla) {
+        List<DetailFasilitas> hasil = new ArrayList<>();
         Koneksi k = new Koneksi();
         try {
             CallableStatement cs = k.conn.prepareCall("{call sp_GetFasilitasByVilla(?)}");
@@ -192,12 +149,11 @@ public class DashboardPenyewa {
             ResultSet rs = cs.executeQuery();
 
             while (rs.next()) {
-                hasil.add(new VillaFasilitas(
-                        rs.getString("IdVillaFasilitas"),
-                        rs.getString("IdVilla"),
-                        rs.getString("IdFasilitas"),
-                        rs.getString("NamaFasilitas"),
-                        rs.getInt("Jumlah"),
+                hasil.add(new DetailFasilitas(
+                        rs.getString("Id_Villa"),
+                        rs.getString("Id_Fasilitas"),
+                        rs.getString("Nama_Fasilitas"),
+                        rs.getInt("Qty"),
                         rs.getString("Deskripsi")
                 ));
             }
@@ -209,7 +165,7 @@ public class DashboardPenyewa {
         return hasil;
     }
 
-    private void renderFasilitas(List<VillaFasilitas> list) {
+    private void renderFasilitas(List<DetailFasilitas> list) {
         fasilitasContainer.getChildren().clear();
         if (list.isEmpty()) {
             Label kosong = new Label("Belum ada fasilitas");
@@ -217,15 +173,14 @@ public class DashboardPenyewa {
             fasilitasContainer.getChildren().add(kosong);
             return;
         }
-        for (VillaFasilitas f : list) {
-            String teks = f.getNamaFasilitas() + (f.getJumlah() > 1 ? " (" + f.getJumlah() + ")" : "");
+        for (DetailFasilitas f : list) {
+            String teks = f.getNamaFasilitas() + (f.getQty() > 1 ? " (" + f.getQty() + ")" : "");
             Label chip = new Label(teks);
             chip.getStyleClass().add("fasilitas-chip");
             fasilitasContainer.getChildren().add(chip);
         }
     }
 
-    // ====== render bubble grid ======
     private void renderBubble(List<Villa> list) {
         bubbleContainer.getChildren().clear();
         if (list.isEmpty()) {
@@ -265,7 +220,6 @@ public class DashboardPenyewa {
         return card;
     }
 
-    // Kalau ada foto & filenya ada di disk, tampilkan ImageView. Kalau tidak, placeholder abu-abu.
     private Node buatFotoNode(String namaFoto, double width, double height) {
         if (namaFoto != null) {
             String fullPath = FileUtil.getFullPath(namaFoto);
@@ -286,7 +240,6 @@ public class DashboardPenyewa {
         return placeholder;
     }
 
-    // ====== search (nama atau kapasitas) ======
     @FXML
     private void handleCari() {
         String kw = txtCari.getText() == null ? "" : txtCari.getText().trim().toLowerCase();
@@ -309,12 +262,8 @@ public class DashboardPenyewa {
         renderBubble(daftarVilla);
     }
 
-    // ====================================================================
-    //  BUBBLE ENGINE (dipakai bareng: detail, booking, result)
-    // ====================================================================
-
     private Node[] semuaBubble() {
-        return new Node[]{ detailBubble, bookingPane, resultBubble };
+        return new Node[]{ detailBubble, verifBubble, registrasiBubble, bookingPane };
     }
 
     private void showOverlayBubble(Node bubble) {
@@ -365,7 +314,6 @@ public class DashboardPenyewa {
         fade.play();
     }
 
-    // ====== detail bubble (layar transaksi) ======
     private void tampilkanDetail(Villa v) {
         villaTerpilih = v;
 
@@ -376,7 +324,7 @@ public class DashboardPenyewa {
         lblDetailHargaWeekday.setText("Weekday: " + RUPIAH.format(v.getHargaWeekday()) + " / malam");
         lblDetailHargaWeekend.setText("Weekend (Jum-Sab/Sab-Min): " + RUPIAH.format(v.getHargaWeekend()) + " / malam");
         lblDetailAlamat.setText(v.getAlamatVilla());
-        lblDetailPemilik.setText(v.getNamaPemilik());
+        lblDetailPemilik.setText("");
 
         if (imgDetailFoto != null) {
             if (v.getFoto() != null) {
@@ -397,19 +345,182 @@ public class DashboardPenyewa {
         closeOverlay();
     }
 
-    // ====== buka form booking ======
-    @FXML
-    private void handleBooking() {
-        if (villaTerpilih == null) return;
+    // =========================================================
+    // TAHAP 1: VERIFIKASI PENYEWA (sudah pernah / belum pernah)
+    // =========================================================
 
+    @FXML
+    private void handleMulaiVerifikasi() {
+        if (villaTerpilih == null) return;
+        txtNoTeleponCari.clear();
+        showOverlayBubble(verifBubble);
+    }
+
+    @FXML
+    private void handlePilihSudahPernah() {
+        String noTelp = txtNoTeleponCari.getText() == null ? "" : txtNoTeleponCari.getText().trim();
+        if (noTelp.isEmpty()) {
+            NotifUtil.show(txtNoTeleponCari, NotifUtil.Type.WARNING, "Masukkan nomor telepon Anda terlebih dahulu!");
+            return;
+        }
+
+        Koneksi k = new Koneksi();
+        try {
+            CallableStatement cs = k.conn.prepareCall("{call sp_CariPenyewaByTelepon(?)}");
+            cs.setString(1, noTelp);
+            ResultSet rs = cs.executeQuery();
+
+            if (rs.next()) {
+                penyewaAktif = new Penyewa(
+                        rs.getString("Id_Penyewa"),
+                        rs.getString("Nama"),
+                        rs.getString("No_Telepon"),
+                        rs.getString("No_KTP"),
+                        rs.getDate("Tgl_Lahir") == null ? null : rs.getDate("Tgl_Lahir").toLocalDate(),
+                        rs.getString("Alamat"),
+                        rs.getString("Username")
+                );
+                Session.setPenyewa(penyewaAktif.getIdPenyewa(), penyewaAktif.getNama());
+                tampilkanFormBooking();
+            } else {
+                NotifUtil.show(txtNoTeleponCari, NotifUtil.Type.WARNING,
+                        "Nomor tidak ditemukan. Silakan isi data diri Anda dulu.");
+                txtRegNama.clear();
+                txtRegNoTelp.setText(noTelp);
+                txtRegNoKtp.clear();
+                dpRegTglLahir.setValue(null);
+                txtRegAlamat.clear();
+                showOverlayBubble(registrasiBubble);
+            }
+        } catch (Exception e) {
+            NotifUtil.show(txtNoTeleponCari, NotifUtil.Type.ERROR, "Gagal mencari data: " + e.getMessage());
+        } finally {
+            try { k.conn.close(); } catch (Exception ignored) {}
+        }
+    }
+
+    @FXML
+    private void handlePilihBelumPernah() {
+        txtRegNama.clear();
+        txtRegNoTelp.setText(txtNoTeleponCari.getText() == null ? "" : txtNoTeleponCari.getText().trim());
+        txtRegNoKtp.clear();
+        dpRegTglLahir.setValue(null);
+        txtRegAlamat.clear();
+        showOverlayBubble(registrasiBubble);
+    }
+
+    @FXML
+    private void handleKembaliDariVerif() {
+        closeOverlay();
+    }
+
+    // =========================================================
+    // TAHAP 2: REGISTRASI PENYEWA BARU
+    // =========================================================
+
+    @FXML
+    private void handleSimpanRegistrasi() {
+        if (!validasiRegistrasi()) return;
+
+        // >>> POP-UP KONFIRMASI sebelum data diri beneran disimpan ke DB
+        ConfirmUtil.show(txtRegNama,
+                "Pastikan data diri yang Anda isi sudah benar. Lanjutkan simpan?",
+                this::simpanDataRegistrasi);
+    }
+
+    private void simpanDataRegistrasi() {
+        String nama = txtRegNama.getText().trim();
+        String noTelp = txtRegNoTelp.getText().trim();
+        String noKtp = txtRegNoKtp.getText().trim();
+        LocalDate tglLahir = dpRegTglLahir.getValue();
+        String alamat = txtRegAlamat.getText().trim();
+        int umur = Period.between(tglLahir, LocalDate.now()).getYears();
+
+        Koneksi k = new Koneksi();
+        try {
+            CallableStatement cs = k.conn.prepareCall("{call sp_InsertPenyewa(?, ?, ?, ?, ?, ?, ?, ?)}");
+            cs.setString(1, nama);
+            cs.setString(2, noTelp);
+            cs.setString(3, noKtp);
+            cs.setInt(4, umur);
+            cs.setDate(5, java.sql.Date.valueOf(tglLahir));
+            cs.setString(6, alamat);
+            cs.setNull(7, Types.VARCHAR);
+            cs.setNull(8, Types.VARCHAR);
+            ResultSet rs = cs.executeQuery();
+
+            if (rs.next()) {
+                String idBaru = rs.getString("Id_Penyewa");
+                penyewaAktif = new Penyewa(idBaru, nama, noTelp, noKtp, tglLahir, alamat, null);
+                Session.setPenyewa(idBaru, nama);
+
+                NotifUtil.show(txtRegNama, NotifUtil.Type.SUCCESS, "Data diri berhasil disimpan!",
+                        this::tampilkanFormBooking);
+            }
+        } catch (Exception e) {
+            String pesan = e.getMessage() != null ? e.getMessage() : "";
+            if (pesan.contains("UQ__Penyewa") || (pesan.contains("UNIQUE") && pesan.contains("No_KTP"))) {
+                NotifUtil.show(txtRegNoKtp, NotifUtil.Type.WARNING,
+                        "Nomor KTP sudah terdaftar! Coba klik 'Sudah Pernah' dan cari pakai nomor telepon Anda.");
+            } else {
+                NotifUtil.show(txtRegNama, NotifUtil.Type.ERROR, "Gagal menyimpan data diri: " + e.getMessage());
+            }
+        } finally {
+            try { k.conn.close(); } catch (Exception ignored) {}
+        }
+    }
+
+    @FXML
+    private void handleKembaliDariRegistrasi() {
+        showOverlayBubble(verifBubble);
+    }
+
+    private boolean validasiRegistrasi() {
+        if (txtRegNama.getText().trim().isEmpty()) {
+            NotifUtil.show(txtRegNama, NotifUtil.Type.WARNING, "Nama wajib diisi!");
+            return false;
+        }
+        if (!txtRegNama.getText().trim().matches("^[^0-9]+$")) {
+            NotifUtil.show(txtRegNama, NotifUtil.Type.WARNING, "Nama tidak boleh mengandung angka!");
+            return false;
+        }
+        if (txtRegNoTelp.getText().trim().isEmpty() || !txtRegNoTelp.getText().trim().matches("^[0-9]+$")) {
+            NotifUtil.show(txtRegNoTelp, NotifUtil.Type.WARNING, "Nomor telepon wajib diisi dan berupa angka!");
+            return false;
+        }
+        if (txtRegNoKtp.getText().trim().isEmpty() || !txtRegNoKtp.getText().trim().matches("^[0-9]{16}$")) {
+            NotifUtil.show(txtRegNoKtp, NotifUtil.Type.WARNING, "Nomor KTP wajib diisi (16 digit angka)!");
+            return false;
+        }
+        if (dpRegTglLahir.getValue() == null) {
+            NotifUtil.show(dpRegTglLahir, NotifUtil.Type.WARNING, "Tanggal lahir wajib diisi!");
+            return false;
+        }
+        int umur = Period.between(dpRegTglLahir.getValue(), LocalDate.now()).getYears();
+        if (umur < 17) {
+            NotifUtil.show(dpRegTglLahir, NotifUtil.Type.WARNING, "Penyewa minimal berusia 17 tahun!");
+            return false;
+        }
+        if (txtRegAlamat.getText().trim().isEmpty()) {
+            NotifUtil.show(txtRegAlamat, NotifUtil.Type.WARNING, "Alamat wajib diisi!");
+            return false;
+        }
+        return true;
+    }
+
+    // =========================================================
+    // TAHAP 3: FORM BOOKING (identitas penyewa sudah otomatis)
+    // =========================================================
+
+    private void tampilkanFormBooking() {
         lblVillaTerpilih.setText("Villa: " + villaTerpilih.getNamaVilla()
                 + " (Weekday " + RUPIAH.format(villaTerpilih.getHargaWeekday())
                 + " / Weekend " + RUPIAH.format(villaTerpilih.getHargaWeekend()) + ")");
 
-        cbPenyewa.getItems().setAll(daftarPenyewa);
-        cbPenyewa.setValue(null);
+        lblPenyewaAktif.setText(penyewaAktif.getNama() + " (" + penyewaAktif.getNoTelp() + ")");
+
         cbMetodePembayaran.setValue(null);
-        txtAlamatBooking.clear();
+        txtAlamatBooking.setText(penyewaAktif.getAlamat() == null ? "" : penyewaAktif.getAlamat());
         dpCheckin.setValue(null);
         dpCheckout.setValue(null);
         txtJumlahTamu.clear();
@@ -419,7 +530,6 @@ public class DashboardPenyewa {
         showOverlayBubble(bookingPane);
     }
 
-    // Estimasi tampilan doang; total resmi tetap dihitung server lewat fnHitungGrandHarga saat insert
     private void hitungGrandHarga() {
         var ci = dpCheckin.getValue();
         var co = dpCheckout.getValue();
@@ -446,12 +556,10 @@ public class DashboardPenyewa {
     private void handleBookingSekarang() {
         if (!validasiBooking()) return;
 
-        Penyewa penyewa = cbPenyewa.getValue();
-
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_InsertBooking(?, ?, ?, ?, ?, ?, ?)}");
-            cs.setString(1, penyewa.getIdPenyewa());
+            CallableStatement cs = k.conn.prepareCall("{call sp_InsertBooking(?, ?, ?, ?, ?, ?)}");
+            cs.setString(1, penyewaAktif.getIdPenyewa());
             cs.setString(2, villaTerpilih.getIdVilla());
             cs.setDate(3, java.sql.Date.valueOf(dpCheckin.getValue()));
             cs.setDate(4, java.sql.Date.valueOf(dpCheckout.getValue()));
@@ -461,13 +569,9 @@ public class DashboardPenyewa {
             if (catatan.isEmpty()) cs.setNull(6, Types.VARCHAR);
             else cs.setString(6, catatan);
 
-            cs.setString(7, cbMetodePembayaran.getValue());
-
-            // StatusBooking otomatis 'Menunggu Konfirmasi' di server, tidak dikirim dari sini
-
             ResultSet rs = cs.executeQuery();
             if (rs.next()) {
-                String idBooking = rs.getString("IdTrsBooking");
+                String idBooking = rs.getString("Id_TrxBooking");
                 tampilkanHasilBooking(idBooking);
             }
         } catch (NumberFormatException e) {
@@ -485,12 +589,8 @@ public class DashboardPenyewa {
     }
 
     private boolean validasiBooking() {
-        if (cbPenyewa.getValue() == null) {
-            NotifUtil.show(cbPenyewa, NotifUtil.Type.WARNING, "Pilih penyewa terlebih dahulu!");
-            return false;
-        }
-        if (cbMetodePembayaran.getValue() == null) {
-            NotifUtil.show(cbMetodePembayaran, NotifUtil.Type.WARNING, "Pilih metode pembayaran terlebih dahulu!");
+        if (penyewaAktif == null) {
+            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.WARNING, "Sesi penyewa tidak valid, silakan ulangi dari awal!");
             return false;
         }
         if (dpCheckin.getValue() == null || dpCheckout.getValue() == null
@@ -509,15 +609,26 @@ public class DashboardPenyewa {
         return true;
     }
 
-    // ====== hasil booking (pengganti Alert) ======
+    // >>> Hasil booking sekarang ditampilkan lewat toast NotifUtil, bukan bubble custom lagi.
+    // Durasi diperpanjang jadi 8 detik biar pengguna sempat catat kode bookingnya.
+    // Reset total (balik ke grid villa + reset sesi penyewa) dijalankan begitu toast selesai.
     private void tampilkanHasilBooking(String idBooking) {
-        lblKodeBooking.setText(idBooking);
-        showOverlayBubble(resultBubble);
+        closeOverlay();
+        NotifUtil.show(mainView, NotifUtil.Type.SUCCESS,
+                "Booking berhasil! Kode booking Anda: " + idBooking + " — tunjukkan ke resepsionis saat check-in.",
+                8.0,
+                this::resetSesiKiosk);
     }
 
-    @FXML
-    private void handleTutupResult() {
-        closeOverlay();
+    // =========================================================
+    // TAHAP 4: RESET SESI -> SIAP BUAT CUSTOMER SELANJUTNYA
+    // =========================================================
+
+    private void resetSesiKiosk() {
+        penyewaAktif = null;
+        villaTerpilih = null;
+        Session.clear();
+
         muatDaftarVilla();
         renderBubble(daftarVilla);
     }

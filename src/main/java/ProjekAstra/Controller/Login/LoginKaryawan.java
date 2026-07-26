@@ -75,7 +75,7 @@ public class LoginKaryawan implements Initializable {
         Koneksi k = new Koneksi();
 
         try {
-            String sql = "SELECT NamaKaryawan, Status, Role FROM Karyawan WHERE Username=? AND Password=? AND Status='AKTIF'";
+            String sql = "SELECT Nama_Karyawan, Status, Role FROM Karyawan WHERE Username=? AND Password=? AND Status='AKTIF'";
 
             PreparedStatement ps = k.conn.prepareStatement(sql);
             ps.setString(1, username);
@@ -84,7 +84,7 @@ public class LoginKaryawan implements Initializable {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                String nama = rs.getString("NamaKaryawan");
+                String nama = rs.getString("Nama_Karyawan");
                 NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
                         ("Login berhasil! Selamat datang, " + nama + "👤"),
                         () -> MainApp.switchScene("/UIDashboard/UIDashboardKaryawan.fxml"));

@@ -15,8 +15,4 @@ public class Tampilan {
         MainApp.switchScene("/UIDashboard/UIDashboardPenyewa.fxml");
     }
 
-    @FXML
-    private void handlePemilik() {
-        MainApp.switchScene("/UILogin/UILoginPemilik.fxml");
-    }
 }

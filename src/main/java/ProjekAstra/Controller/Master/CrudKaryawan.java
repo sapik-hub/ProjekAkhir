@@ -77,11 +77,11 @@ public class CrudKaryawan implements Initializable {
             ResultSet rs = cs.executeQuery();
 
             while (rs.next()) {
-                Date tgl = rs.getDate("TanggalMasuk");
+                Date tgl = rs.getDate("Tanggal_Masuk");
                 listKaryawan.add(new Karyawan(
-                        rs.getString("IdKaryawan"),
-                        rs.getString("NamaKaryawan"),
-                        rs.getString("NoTelp"),
+                        rs.getString("Id_Karyawan"),
+                        rs.getString("Nama_Karyawan"),
+                        rs.getString("No_Telp"),
                         rs.getString("Alamat"),
                         rs.getInt("Umur"),
                         rs.getString("Username"),
@@ -122,7 +122,7 @@ public class CrudKaryawan implements Initializable {
 
         Koneksi k = new Koneksi();
         try {
-            // Status & Role otomatis di dalam SP (AKTIF / SuperAdmin)
+            // Role otomatis 'Admin' (default parameter di SP), Status otomatis 'Aktif'
             CallableStatement cs = k.conn.prepareCall("{call sp_InsertKaryawan(?, ?, ?, ?, ?, ?, ?)}");
             cs.setString(1, txtNama.getText().trim());
             cs.setString(2, txtNoTelp.getText().trim());
@@ -263,10 +263,6 @@ public class CrudKaryawan implements Initializable {
     // ===========================================================
     // VALIDASI
     // ===========================================================
-    // - Nama    : wajib diisi, tidak boleh angka, tidak boleh simbol (huruf & spasi saja)
-    // - NoTelp  : wajib diisi, hanya boleh angka (tidak boleh huruf/simbol)
-    // - Umur    : wajib diisi, hanya angka, maksimal 2 digit (0-99)
-    // - Alamat  : wajib diisi, tidak boleh angka, tidak boleh simbol seperti @#$%^&*!
     private boolean validasiInsert() {
         if (txtNama.getText().trim().isEmpty() || txtNoTelp.getText().trim().isEmpty() ||
                 txtUmur.getText().trim().isEmpty() || txtAlamat.getText().trim().isEmpty() ||
@@ -287,32 +283,27 @@ public class CrudKaryawan implements Initializable {
         return validasiFormat();
     }
 
-    // Validasi format field yang sama-sama dipakai insert & update
     private boolean validasiFormat() {
         String nama = txtNama.getText().trim();
         String noTelp = txtNoTelp.getText().trim();
         String umur = txtUmur.getText().trim();
         String alamat = txtAlamat.getText().trim();
 
-        // Nama: hanya huruf dan spasi, tidak boleh angka/simbol
         if (!nama.matches("^[a-zA-Z\\s]+$")) {
             notif(NotifUtil.Type.WARNING, "Nama tidak boleh mengandung angka atau simbol!");
             return false;
         }
 
-        // No Telp: hanya angka, tidak boleh huruf/simbol
         if (!noTelp.matches("^[0-9]+$")) {
             notif(NotifUtil.Type.WARNING, "No Telp hanya boleh berisi angka!");
             return false;
         }
 
-        // Umur: hanya angka, maksimal 2 digit
         if (!umur.matches("^[0-9]{1,2}$")) {
             notif(NotifUtil.Type.WARNING, "Umur harus berupa angka dan maksimal 2 digit!");
             return false;
         }
 
-        // Alamat: tidak boleh angka dan tidak boleh simbol seperti @#$%^&*!
         if (!alamat.matches("^[a-zA-Z\\s]+$")) {
             notif(NotifUtil.Type.WARNING, "Alamat tidak boleh mengandung angka atau simbol!");
             return false;

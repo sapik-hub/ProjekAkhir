@@ -28,6 +28,15 @@ public class DashboardKaryawan {
     private Button btnPenyewa;
 
     @FXML
+    private Button btnVilla;
+
+    @FXML
+    private Button btnKategori;
+
+    @FXML
+    private Button btnFasilitas;
+
+    @FXML
     private Button btnTransaksiBooking;
 
     @FXML
@@ -42,12 +51,10 @@ public class DashboardKaryawan {
 
     @FXML
     private void handleKaryawan() {
-
         loadContent(
                 "/UICrud/UICrudKaryawan.fxml",
                 "Data Karyawan"
         );
-
         setActiveButton(btnKaryawan);
     }
     @FXML
@@ -67,9 +74,33 @@ public class DashboardKaryawan {
         setActiveButton(btnPenyewa);
     }
     @FXML
+    private void handleVilla() {
+        loadContent(
+                "/UICrud/UICrudVilla.fxml",
+                "Data Villa"
+        );
+        setActiveButton(btnVilla);
+    }
+    @FXML
+    private void handleKategori() {
+        loadContent(
+                "/UICrud/UICrudKategoriVilla.fxml",
+                "Data Kategori Villa"
+        );
+        setActiveButton(btnKategori);
+    }
+    @FXML
+    private void handleFasilitas() {
+        loadContent(
+                "/UICrud/UICrudFasilitas.fxml",
+                "Data Fasilitas"
+        );
+        setActiveButton(btnFasilitas);
+    }
+    @FXML
     private void handleTransaksiBooking() {
         loadContent(
-                "/UITransaksi/Booking.fxml",
+                "/UITransaksi/UITrsBooking.fxml",
                 "Transaksi Booking"
         );
         setActiveButton(btnTransaksiBooking);
@@ -126,6 +157,15 @@ public class DashboardKaryawan {
         );
         btnPenyewa.setStyle(
                 btnPenyewa == active ? aktif : nonAktif
+        );
+        btnVilla.setStyle(
+                btnVilla == active ? aktif : nonAktif
+        );
+        btnKategori.setStyle(
+                btnKategori == active ? aktif : nonAktif
+        );
+        btnFasilitas.setStyle(
+                btnFasilitas == active ? aktif : nonAktif
         );
         btnTransaksiBooking.setStyle(
                 btnTransaksiBooking == active ? aktif : nonAktif

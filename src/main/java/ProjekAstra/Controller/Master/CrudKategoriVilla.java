@@ -58,8 +58,8 @@ public class CrudKategoriVilla implements Initializable {
 
             while (rs.next()) {
                 listKategori.add(new KategoriVilla(
-                        rs.getString("IdKategori"),
-                        rs.getString("NamaKategori"),
+                        rs.getString("Id_Kategori"),
+                        rs.getString("Nama_Kategori"),
                         rs.getString("Deskripsi")
                 ));
             }
