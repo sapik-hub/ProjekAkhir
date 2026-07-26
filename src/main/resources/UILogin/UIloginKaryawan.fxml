@@ -105,9 +105,24 @@
                            promptText="Alamat"
                            styleClass="input-field"/>
 
-                <TextField fx:id="regUmur"
-                           promptText="Umur"
-                           styleClass="input-field"/>
+                <!-- TANGGAL LAHIR + UMUR -->
+                <HBox spacing="10">
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Tanggal Lahir" styleClass="label-regular" style="-fx-font-size: 11px; -fx-text-fill: #718096;"/>
+                        <DatePicker fx:id="regTglLahir"
+                                    promptText="Tanggal Lahir"
+                                    maxWidth="Infinity"
+                                    styleClass="input-field"/>
+                    </VBox>
+                    <VBox spacing="5" prefWidth="80">
+                        <Label text="Umur" styleClass="label-regular" style="-fx-font-size: 11px; -fx-text-fill: #718096;"/>
+                        <TextField fx:id="regUmur"
+                                   promptText="Umur"
+                                   editable="false"
+                                   styleClass="input-field"
+                                   style="-fx-background-color: #f5f5f5; -fx-text-fill: #666666;"/>
+                    </VBox>
+                </HBox>
 
                 <DatePicker fx:id="regTglMasuk"
                             promptText="Tanggal Masuk"

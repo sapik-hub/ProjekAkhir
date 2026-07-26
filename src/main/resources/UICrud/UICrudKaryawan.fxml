@@ -14,7 +14,7 @@
             <padding><Insets top="0" bottom="15" left="0" right="0"/></padding>
 
             <!-- FORM INPUT -->
-            <ScrollPane fitToWidth="true" prefWidth="300" styleClass="card" hbarPolicy="NEVER">
+            <ScrollPane fitToWidth="true" prefWidth="320" styleClass="card" hbarPolicy="NEVER">
                 <VBox spacing="10">
                     <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
 
@@ -25,7 +25,18 @@
                     <TextField fx:id="txtId" promptText="ID Karyawan" editable="false" styleClass="input-field"/>
                     <TextField fx:id="txtNama" promptText="Nama Lengkap" styleClass="input-field"/>
                     <TextField fx:id="txtNoTelp" promptText="No. Telepon" styleClass="input-field"/>
-                    <TextField fx:id="txtUmur" promptText="Umur" styleClass="input-field"/>
+
+                    <HBox spacing="10">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Tanggal Lahir" styleClass="label-regular"/>
+                            <DatePicker fx:id="dpTanggalLahir" promptText="Tanggal Lahir" maxWidth="Infinity" styleClass="input-field"/>
+                        </VBox>
+                        <VBox spacing="5" prefWidth="80">
+                            <Label text="Umur" styleClass="label-regular"/>
+                            <TextField fx:id="txtUmur" promptText="Umur" styleClass="input-field" editable="false"/>
+                        </VBox>
+                    </HBox>
+
                     <TextArea fx:id="txtAlamat" promptText="Alamat" prefRowCount="2" wrapText="true" styleClass="input-field"/>
 
                     <Separator/>
@@ -33,8 +44,17 @@
 
                     <TextField fx:id="txtUsername" promptText="Username" styleClass="input-field"/>
                     <PasswordField fx:id="txtPassword" promptText="Password" styleClass="input-field"/>
-                    <DatePicker fx:id="dpTanggalMasuk" promptText="Tanggal Masuk" maxWidth="Infinity" styleClass="input-field"/>
-                    <ComboBox fx:id="cbRole" promptText="Role" maxWidth="Infinity" styleClass="input-field"/>
+
+                    <HBox spacing="10">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Tanggal Masuk" styleClass="label-regular"/>
+                            <DatePicker fx:id="dpTanggalMasuk" promptText="Tanggal Masuk" maxWidth="Infinity" styleClass="input-field"/>
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Role" styleClass="label-regular"/>
+                            <ComboBox fx:id="cbRole" promptText="Role" maxWidth="Infinity" styleClass="input-field"/>
+                        </VBox>
+                    </HBox>
 
                     <Label text="Status" styleClass="detail-label-kecil"/>
                     <Label fx:id="lblStatus" text="-" styleClass="detail-harga"/>
@@ -55,6 +75,7 @@
                         <TableColumn fx:id="colNoTelp" text="No. Telp" prefWidth="120"/>
                         <TableColumn fx:id="colUmur" text="Umur" prefWidth="60"/>
                         <TableColumn fx:id="colAlamat" text="Alamat" prefWidth="180"/>
+                        <TableColumn fx:id="colTglLahir" text="Tgl Lahir" prefWidth="100"/>
                         <TableColumn fx:id="colUsername" text="Username" prefWidth="110"/>
                         <TableColumn fx:id="colTglMasuk" text="Tgl Masuk" prefWidth="100"/>
                         <TableColumn fx:id="colRole" text="Role" prefWidth="90"/>

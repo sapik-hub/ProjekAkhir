@@ -75,7 +75,7 @@
 
             <Button fx:id="btnSimpan" text="Simpan" onAction="#handleSimpan"
                     styleClass="btn-primary" prefWidth="110"/>
-            <Button fx:id="btnKonfirmasi" text="Konfirmasi" onAction="#handleKonfirmasi"
+            <Button fx:id="btnUbah" text="Ubah" onAction="#handleUbah"
                     styleClass="btn-warning" prefWidth="110"/>
             <Button fx:id="btnHapus" text="Batalkan" onAction="#handleHapus"
                     styleClass="btn-danger" prefWidth="110"/>

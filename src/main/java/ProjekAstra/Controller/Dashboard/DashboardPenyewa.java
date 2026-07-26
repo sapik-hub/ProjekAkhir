@@ -10,8 +10,6 @@ import ProjekAstra.Util.FileUtil;
 import ProjekAstra.Util.NotifUtil;
 import ProjekAstra.Util.Session;
 
-import javafx.animation.FadeTransition;
-import javafx.animation.ScaleTransition;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -194,8 +192,40 @@ public class DashboardPenyewa {
         }
     }
 
+    // ===========================================================
+    // PERBAIKAN: buatBubble() dengan foto yang benar
+    // ===========================================================
     private Button buatBubble(Villa v) {
-        Node fotoNode = buatFotoNode(v.getFoto(), 230, 190);
+        // Buat ImageView untuk foto
+        ImageView fotoView = new ImageView();
+        fotoView.setFitWidth(230);
+        fotoView.setFitHeight(190);
+        fotoView.setPreserveRatio(false);
+        fotoView.getStyleClass().add("card-image");
+
+        // Load foto jika ada
+        if (v.getFoto() != null && !v.getFoto().isEmpty()) {
+            String fullPath = FileUtil.getFullPath(v.getFoto());
+            if (fullPath != null) {
+                File file = new File(fullPath);
+                if (file.exists()) {
+                    try {
+                        Image image = new Image(file.toURI().toString());
+                        fotoView.setImage(image);
+                    } catch (Exception e) {
+                        System.out.println("Gagal load foto untuk " + v.getNamaVilla() + ": " + e.getMessage());
+                    }
+                } else {
+                    System.out.println("File foto tidak ditemukan: " + fullPath);
+                }
+            }
+        }
+
+        // Jika foto tidak ada atau gagal load, tampilkan placeholder
+        if (fotoView.getImage() == null) {
+            fotoView.setImage(null);
+            fotoView.setStyle("-fx-background-color: #e0e0e0; -fx-background-radius: 8;");
+        }
 
         Label lblNama = new Label(v.getNamaVilla());
         lblNama.getStyleClass().add("card-nama");
@@ -208,7 +238,7 @@ public class DashboardPenyewa {
         Label lblHarga = new Label(RUPIAH.format(v.getHargaWeekday()) + " / malam (weekday)");
         lblHarga.getStyleClass().add("card-kapasitas");
 
-        VBox isiCard = new VBox(8, fotoNode, lblNama, lblKapasitas, lblHarga);
+        VBox isiCard = new VBox(8, fotoView, lblNama, lblKapasitas, lblHarga);
         isiCard.setAlignment(Pos.CENTER);
         isiCard.setPadding(new Insets(0, 0, 18, 0));
 
@@ -220,25 +250,54 @@ public class DashboardPenyewa {
         return card;
     }
 
-    private Node buatFotoNode(String namaFoto, double width, double height) {
-        if (namaFoto != null) {
-            String fullPath = FileUtil.getFullPath(namaFoto);
-            File file = new File(fullPath);
-            if (file.exists()) {
-                ImageView iv = new ImageView(new Image(file.toURI().toString()));
-                iv.setFitWidth(width);
-                iv.setFitHeight(height);
-                iv.setPreserveRatio(false);
-                return iv;
+    // ===========================================================
+    // PERBAIKAN: tampilkanDetail() dengan foto yang benar
+    // ===========================================================
+    private void tampilkanDetail(Villa v) {
+        villaTerpilih = v;
+
+        lblDetailStatus.setText(v.getStatus());
+        lblDetailNama.setText(v.getNamaVilla());
+        lblDetailKategori.setText("🏷 Kategori: " + v.getNamaKategori());
+        lblDetailKapasitas.setText("👥 Kapasitas: " + v.getKapasitas() + " orang");
+        lblDetailHargaWeekday.setText("Weekday: " + RUPIAH.format(v.getHargaWeekday()) + " / malam");
+        lblDetailHargaWeekend.setText("Weekend (Jum-Sab/Sab-Min): " + RUPIAH.format(v.getHargaWeekend()) + " / malam");
+        lblDetailAlamat.setText(v.getAlamatVilla());
+        lblDetailPemilik.setText("");
+
+        // Load foto untuk detail
+        if (imgDetailFoto != null) {
+            imgDetailFoto.setImage(null);
+            if (v.getFoto() != null && !v.getFoto().isEmpty()) {
+                String fullPath = FileUtil.getFullPath(v.getFoto());
+                if (fullPath != null) {
+                    File file = new File(fullPath);
+                    if (file.exists()) {
+                        try {
+                            Image image = new Image(file.toURI().toString());
+                            imgDetailFoto.setImage(image);
+                        } catch (Exception e) {
+                            System.out.println("Gagal load foto detail: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            // Jika foto tidak ada, set placeholder style
+            if (imgDetailFoto.getImage() == null) {
+                imgDetailFoto.setStyle("-fx-background-color: #e0e0e0; -fx-background-radius: 8;");
+            } else {
+                imgDetailFoto.setStyle("");
             }
         }
-        Region placeholder = new Region();
-        placeholder.getStyleClass().add("card-image-placeholder");
-        placeholder.setPrefSize(width, height);
-        placeholder.setMinSize(width, height);
-        placeholder.setMaxSize(width, height);
-        return placeholder;
+
+        renderFasilitas(muatFasilitas(v.getIdVilla()));
+
+        showOverlayBubble(detailBubble);
     }
+
+    // ===========================================================
+    // METHOD LAINNYA (TETAP SAMA)
+    // ===========================================================
 
     @FXML
     private void handleCari() {
@@ -280,10 +339,10 @@ public class DashboardPenyewa {
         bubble.setScaleY(0.7);
         bubble.setOpacity(0);
 
-        ScaleTransition scale = new ScaleTransition(Duration.millis(220), bubble);
+        javafx.animation.ScaleTransition scale = new javafx.animation.ScaleTransition(Duration.millis(220), bubble);
         scale.setToX(1);
         scale.setToY(1);
-        FadeTransition fade = new FadeTransition(Duration.millis(220), bubble);
+        javafx.animation.FadeTransition fade = new javafx.animation.FadeTransition(Duration.millis(220), bubble);
         fade.setToValue(1);
         scale.play();
         fade.play();
@@ -301,7 +360,7 @@ public class DashboardPenyewa {
         }
 
         Node finalCurrent = current;
-        FadeTransition fade = new FadeTransition(Duration.millis(180), current);
+        javafx.animation.FadeTransition fade = new javafx.animation.FadeTransition(Duration.millis(180), current);
         fade.setFromValue(1);
         fade.setToValue(0);
         fade.setOnFinished(e -> {
@@ -314,39 +373,13 @@ public class DashboardPenyewa {
         fade.play();
     }
 
-    private void tampilkanDetail(Villa v) {
-        villaTerpilih = v;
-
-        lblDetailStatus.setText(v.getStatus());
-        lblDetailNama.setText(v.getNamaVilla());
-        lblDetailKategori.setText("🏷 Kategori: " + v.getNamaKategori());
-        lblDetailKapasitas.setText("👥 Kapasitas: " + v.getKapasitas() + " orang");
-        lblDetailHargaWeekday.setText("Weekday: " + RUPIAH.format(v.getHargaWeekday()) + " / malam");
-        lblDetailHargaWeekend.setText("Weekend (Jum-Sab/Sab-Min): " + RUPIAH.format(v.getHargaWeekend()) + " / malam");
-        lblDetailAlamat.setText(v.getAlamatVilla());
-        lblDetailPemilik.setText("");
-
-        if (imgDetailFoto != null) {
-            if (v.getFoto() != null) {
-                File file = new File(FileUtil.getFullPath(v.getFoto()));
-                imgDetailFoto.setImage(file.exists() ? new Image(file.toURI().toString()) : null);
-            } else {
-                imgDetailFoto.setImage(null);
-            }
-        }
-
-        renderFasilitas(muatFasilitas(v.getIdVilla()));
-
-        showOverlayBubble(detailBubble);
-    }
-
     @FXML
     private void handleKembaliBubble() {
         closeOverlay();
     }
 
     // =========================================================
-    // TAHAP 1: VERIFIKASI PENYEWA (sudah pernah / belum pernah)
+    // TAHAP 1: VERIFIKASI PENYEWA
     // =========================================================
 
     @FXML
@@ -422,7 +455,6 @@ public class DashboardPenyewa {
     private void handleSimpanRegistrasi() {
         if (!validasiRegistrasi()) return;
 
-        // >>> POP-UP KONFIRMASI sebelum data diri beneran disimpan ke DB
         ConfirmUtil.show(txtRegNama,
                 "Pastikan data diri yang Anda isi sudah benar. Lanjutkan simpan?",
                 this::simpanDataRegistrasi);
@@ -509,7 +541,7 @@ public class DashboardPenyewa {
     }
 
     // =========================================================
-    // TAHAP 3: FORM BOOKING (identitas penyewa sudah otomatis)
+    // TAHAP 3: FORM BOOKING
     // =========================================================
 
     private void tampilkanFormBooking() {
@@ -609,9 +641,6 @@ public class DashboardPenyewa {
         return true;
     }
 
-    // >>> Hasil booking sekarang ditampilkan lewat toast NotifUtil, bukan bubble custom lagi.
-    // Durasi diperpanjang jadi 8 detik biar pengguna sempat catat kode bookingnya.
-    // Reset total (balik ke grid villa + reset sesi penyewa) dijalankan begitu toast selesai.
     private void tampilkanHasilBooking(String idBooking) {
         closeOverlay();
         NotifUtil.show(mainView, NotifUtil.Type.SUCCESS,
@@ -621,7 +650,7 @@ public class DashboardPenyewa {
     }
 
     // =========================================================
-    // TAHAP 4: RESET SESI -> SIAP BUAT CUSTOMER SELANJUTNYA
+    // TAHAP 4: RESET SESI
     // =========================================================
 
     private void resetSesiKiosk() {

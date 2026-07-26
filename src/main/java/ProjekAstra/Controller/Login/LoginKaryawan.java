@@ -14,6 +14,7 @@ import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.ResourceBundle;
 
 public class LoginKaryawan implements Initializable {
@@ -26,18 +27,45 @@ public class LoginKaryawan implements Initializable {
     @FXML private TextField loginUsername;
     @FXML private PasswordField loginPassword;
 
+    // ===== REGISTER FORM =====
     @FXML private TextField regNama;
     @FXML private TextField regNoTelp;
     @FXML private TextField regAlamat;
     @FXML private TextField regUmur;
+    @FXML private DatePicker regTglLahir;
     @FXML private DatePicker regTglMasuk;
     @FXML private TextField regUsername;
     @FXML private PasswordField regPassword;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        // Auto-calc Umur dari Tanggal Lahir
+        regTglLahir.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                int umur = hitungUmur(newVal);
+                regUmur.setText(String.valueOf(umur));
+            } else {
+                regUmur.clear();
+            }
+        });
+
+        // Default tampilan login
+        showLogin();
     }
 
+    // ===========================================================
+    // HITUNG UMUR OTOMATIS
+    // ===========================================================
+    private int hitungUmur(LocalDate tanggalLahir) {
+        if (tanggalLahir == null) return 0;
+        LocalDate today = LocalDate.now();
+        Period period = Period.between(tanggalLahir, today);
+        return period.getYears();
+    }
+
+    // ===========================================================
+    // TAB SWITCH
+    // ===========================================================
     @FXML
     private void showLogin() {
         paneLogin.setVisible(true);
@@ -62,6 +90,9 @@ public class LoginKaryawan implements Initializable {
         tabLogin.getStyleClass().setAll("tab-btn-inactive");
     }
 
+    // ===========================================================
+    // LOGIN
+    // ===========================================================
     @FXML
     private void handleLogin() {
 
@@ -74,14 +105,21 @@ public class LoginKaryawan implements Initializable {
         }
 
         // ================= AKUN TEST CEPAT (SEMENTARA) =================
-        // Dipakai untuk coba dashboard SuperAdmin & Manager tanpa perlu
-        // setting Role di database dulu. Hapus/comment blok ini kalau
-        // sudah pakai data Role asli dari tabel Karyawan.
+        // ================= 1. AKUN TEST MANAGER =================
         if (username.equals("a") && password.equals("s")) {
             Session.setKaryawan("TEST-MGR", "Manager (Test)", "Manager");
             NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
-                    "Login berhasil! Selamat datang, Manager👤",
+                    "Login berhasil! Selamat datang, Manager 👤",
                     () -> MainApp.switchScene("/UIDashboard/UIDashboardManager.fxml"));
+            return;
+        }
+
+        // ================= 2. AKUN TEST ADMIN =================
+        if (username.equals("s") && password.equals("a")) {
+            Session.setKaryawan("TEST-ADMIN", "Admin (Test)", "Admin");
+            NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
+                    "Login berhasil! Selamat datang, Admin 👤",
+                    () -> MainApp.switchScene("/UIDashboard/UIDashboardKaryawan.fxml"));
             return;
         }
         // =================================================================
@@ -89,7 +127,7 @@ public class LoginKaryawan implements Initializable {
         Koneksi k = new Koneksi();
 
         try {
-            String sql = "SELECT Id_Karyawan, Nama_Karyawan, Status, Role FROM Karyawan WHERE Username=? AND Password=? AND Status='AKTIF'";
+            String sql = "SELECT Id_Karyawan, Nama_Karyawan, Status, Role FROM Karyawan WHERE Username=? AND Password=? AND Status='Aktif'";
 
             PreparedStatement ps = k.conn.prepareStatement(sql);
             ps.setString(1, username);
@@ -112,7 +150,7 @@ public class LoginKaryawan implements Initializable {
                 }
 
                 NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
-                        ("Login berhasil! Selamat datang, " + nama + "👤"),
+                        ("Login berhasil! Selamat datang, " + nama + " 👤"),
                         () -> MainApp.switchScene(tujuanDashboard));
             } else {
                 notifLogin(NotifUtil.Type.ERROR, "Username/Password salah atau akun tidak aktif!");
@@ -125,10 +163,6 @@ public class LoginKaryawan implements Initializable {
         }
     }
 
-    /**
-     * Menentukan tujuan dashboard berdasarkan Role yang tersimpan di database.
-     * Sesuaikan value String di sini kalau penamaan Role di tabel Karyawan berbeda.
-     */
     private String getDashboardByRole(String role) {
         if (role == null) return null;
 
@@ -143,6 +177,9 @@ public class LoginKaryawan implements Initializable {
         }
     }
 
+    // ===========================================================
+    // REGISTER
+    // ===========================================================
     @FXML
     private void handleRegister() {
 
@@ -150,14 +187,17 @@ public class LoginKaryawan implements Initializable {
         String noTelp = regNoTelp.getText().trim();
         String alamat = regAlamat.getText().trim();
         String umurText = regUmur.getText().trim();
+        LocalDate tglLahir = regTglLahir.getValue();
         LocalDate tglMasuk = regTglMasuk.getValue();
         String username = regUsername.getText().trim();
         String password = regPassword.getText().trim();
 
+        // ===== VALIDASI =====
         if (nama.isEmpty() ||
                 noTelp.isEmpty() ||
                 alamat.isEmpty() ||
                 umurText.isEmpty() ||
+                tglLahir == null ||
                 tglMasuk == null ||
                 username.isEmpty() ||
                 password.isEmpty()) {
@@ -174,19 +214,39 @@ public class LoginKaryawan implements Initializable {
             return;
         }
 
+        // ===== VALIDASI FORMAT =====
+        if (!nama.matches("^[a-zA-Z\\s]+$")) {
+            notifRegister(NotifUtil.Type.WARNING, "Nama tidak boleh mengandung angka atau simbol!");
+            return;
+        }
+
+        if (!noTelp.matches("^[0-9]+$")) {
+            notifRegister(NotifUtil.Type.WARNING, "No Telp hanya boleh berisi angka!");
+            return;
+        }
+
+        if (!alamat.matches("^[a-zA-Z\\s]+$")) {
+            notifRegister(NotifUtil.Type.WARNING, "Alamat tidak boleh mengandung angka atau simbol!");
+            return;
+        }
+
+        // ===== SIMPAN KE DATABASE =====
         Koneksi k = new Koneksi();
 
         try {
+            // SP Insert Karyawan dengan Tanggal Lahir (9 parameter)
             CallableStatement cs =
-                    k.conn.prepareCall("{call sp_InsertKaryawan(?, ?, ?, ?, ?, ?, ?)}");
+                    k.conn.prepareCall("{call sp_InsertKaryawan(?, ?, ?, ?, ?, ?, ?, ?, ?)}");
 
             cs.setString(1, nama);
             cs.setString(2, noTelp);
             cs.setString(3, alamat);
             cs.setInt(4, umur);
-            cs.setString(5, username);
-            cs.setString(6, password);
-            cs.setDate(7, java.sql.Date.valueOf(tglMasuk));
+            cs.setDate(5, java.sql.Date.valueOf(tglLahir));
+            cs.setString(6, username);
+            cs.setString(7, password);
+            cs.setDate(8, java.sql.Date.valueOf(tglMasuk));
+            cs.setString(9, "Admin");  // Default Role = Admin untuk pendaftaran
 
             cs.execute();
 
@@ -209,6 +269,7 @@ public class LoginKaryawan implements Initializable {
         regNoTelp.clear();
         regAlamat.clear();
         regUmur.clear();
+        regTglLahir.setValue(null);
         regTglMasuk.setValue(null);
         regUsername.clear();
         regPassword.clear();
@@ -219,6 +280,9 @@ public class LoginKaryawan implements Initializable {
         MainApp.switchScene("/UIMainView/UITampilan.fxml");
     }
 
+    // ===========================================================
+    // NOTIF
+    // ===========================================================
     private void notifLogin(NotifUtil.Type type, String msg) {
         NotifUtil.show(loginUsername, type, msg);
     }

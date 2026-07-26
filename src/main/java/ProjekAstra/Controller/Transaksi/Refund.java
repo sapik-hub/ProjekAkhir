@@ -73,7 +73,22 @@ public class Refund implements Initializable {
             if (r != null) populateForm(r);
         });
 
-        cbBooking.valueProperty().addListener((obs, oldVal, newVal) -> tampilkanInfoBooking(newVal));
+        cbBooking.valueProperty().addListener((obs, oldVal, newVal) -> {
+            tampilkanInfoBooking(newVal);
+            // Auto-set tanggal pengajuan & refund saat pilih booking
+            if (newVal != null) {
+                LocalDate today = LocalDate.now();
+                dpTglPengajuan.setValue(today);
+                dpTglRefund.setValue(today.plusDays(1)); // Refund otomatis H+1
+            }
+        });
+
+        // Auto-set Tanggal Refund = Tanggal Pengajuan + 1 hari
+        dpTglPengajuan.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                dpTglRefund.setValue(newVal.plusDays(1));
+            }
+        });
 
         txtCari.textProperty().addListener((obs, oldVal, newVal) -> cariRefund(newVal));
     }
@@ -103,6 +118,7 @@ public class Refund implements Initializable {
         cbStatus.setItems(FXCollections.observableArrayList(
                 "Pending", "Disetujui", "Ditolak", "Selesai"
         ));
+        cbStatus.setDisable(true); // Default disable
     }
 
     // >>> ambil semua booking, filter yang eligible buat direfund (sesuai fnCekBisaRefund), cache semuanya
@@ -258,13 +274,15 @@ public class Refund implements Initializable {
     private void prosesUbah() {
         Koneksi k = new Koneksi();
         try {
+            // Update alasan dan deskripsi
             CallableStatement cs = k.conn.prepareCall("{call sp_UpdateRefund(?, ?, ?)}");
             cs.setString(1, txtId.getText());
             cs.setString(2, txtAlasan.getText().trim());
             cs.setString(3, txtDeskripsi.getText().trim());
             cs.execute();
 
-            if (cbStatus.getValue() != null) {
+            // Update status jika ada perubahan
+            if (cbStatus.getValue() != null && !cbStatus.getValue().isEmpty()) {
                 CallableStatement csStatus = k.conn.prepareCall("{call sp_UpdateStatusRefund(?, ?)}");
                 csStatus.setString(1, txtId.getText());
                 csStatus.setString(2, cbStatus.getValue());
@@ -366,16 +384,16 @@ public class Refund implements Initializable {
         txtVilla.setText(r.getNamaVilla());
         txtGrandHarga.setText(r.getJumlahRefund() != null ? "Rp " + RUPIAH_FORMAT.format(r.getJumlahRefund()) : "");
 
-        // >>> Diproses Oleh tetap nampilin siapa yang ORIGINAL mengajukan refund ini (dari data tersimpan),
-        // bukan karyawan yang sedang login sekarang - biar histori gak berubah pas cuma dibuka/edit.
         txtDiprosesOleh.setText(r.getNamaKaryawan());
 
         txtAlasan.setText(r.getAlasanRefund());
         txtDeskripsi.setText(r.getDeskripsi());
 
+        // Enable status combo saat mode ubah
         cbStatus.setDisable(false);
         cbStatus.setValue(r.getStatus());
 
+        // Set tanggal
         dpTglPengajuan.setValue(r.getTanggalPengajuan());
         dpTglRefund.setValue(r.getTanggalRefund());
 
@@ -386,7 +404,6 @@ public class Refund implements Initializable {
         btnHapus.setDisable(false);
     }
 
-    // >>> pastikan combo bisa nampilin value walau item itu udah gak eligible lagi (misal booking-nya udah ganti status)
     private void selectComboById(ComboBox<String> combo, String id, String namaPenyewa) {
         for (String item : combo.getItems()) {
             if (item.startsWith(id + " - ")) {
@@ -412,17 +429,18 @@ public class Refund implements Initializable {
         cbBooking.setValue(null);
         cbBooking.setDisable(false);
 
+        // Status hanya enable saat mode ubah
         cbStatus.setDisable(true);
-        cbStatus.setValue("Pending"); // >>> status transaksi default sesuai SQL
+        cbStatus.setValue(null);
 
-        dpTglPengajuan.setValue(LocalDate.now()); // >>> preview: refund baru otomatis tanggal hari ini
-        dpTglPengajuan.setDisable(true);
-        dpTglRefund.setValue(null);
-        dpTglRefund.setDisable(true);
+        // Set tanggal default
+        LocalDate today = LocalDate.now();
+        dpTglPengajuan.setValue(today);
+        dpTglRefund.setValue(today.plusDays(1));
+        dpTglPengajuan.setDisable(false);
+        dpTglRefund.setDisable(false);
 
-        // >>> FIX: "Diproses Oleh" otomatis terisi nama karyawan/superadmin yang sedang login.
-        // Kalau kosong, berarti Session.setKaryawan(...) belum dipanggil pas proses login -
-        // munculin placeholder yang jelas biar ketahuan, bukan field kosong tanpa penjelasan.
+        // Auto-fill Diproses Oleh
         String namaAktif = Session.getNamaKaryawan();
         txtDiprosesOleh.setText(namaAktif != null && !namaAktif.isEmpty() ? namaAktif : "⚠ Sesi tidak ditemukan");
 
@@ -432,10 +450,9 @@ public class Refund implements Initializable {
         btnUbah.setDisable(true);
         btnHapus.setDisable(true);
 
-        generateIdRefund(); // >>> preview ID refund berikutnya
+        generateIdRefund();
     }
 
-    // >>> preview ID refund berikutnya, sama pola kayak generateIdVilla() di CrudVilla
     private void generateIdRefund() {
         Koneksi k = new Koneksi();
         try {
@@ -458,8 +475,10 @@ public class Refund implements Initializable {
             notif(NotifUtil.Type.WARNING, "Booking dan Alasan Refund wajib diisi!");
             return false;
         }
-        // >>> FIX: cegah insert gagal diam-diam karena Id_Karyawan NULL (kolom NOT NULL + ada FK).
-        // Kasih pesan jelas ke user daripada nunggu SQL Server nolak dengan error mentah.
+        if (dpTglPengajuan.getValue() == null) {
+            notif(NotifUtil.Type.WARNING, "Tanggal Pengajuan wajib diisi!");
+            return false;
+        }
         if (Session.getIdKaryawan() == null || Session.getIdKaryawan().isEmpty()) {
             notif(NotifUtil.Type.ERROR, "Sesi karyawan tidak ditemukan! Silakan logout dan login ulang.");
             return false;

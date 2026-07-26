@@ -11,7 +11,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import java.sql.Types;
 
 import java.net.URL;
 import java.sql.CallableStatement;
@@ -26,7 +25,7 @@ public class Booking implements Initializable {
     @FXML private TextArea txtCatatan;
     @FXML private ComboBox<String> cbPenyewa, cbVilla, cbStatus;
     @FXML private DatePicker dpCheckin, dpCheckout;
-    @FXML private Button btnSimpan, btnKonfirmasi, btnHapus;
+    @FXML private Button btnSimpan, btnUbah, btnHapus;  // <-- GANTI: btnKonfirmasi -> btnUbah
 
     @FXML private TableView<TransaksiBooking> tableBooking;
     @FXML private TableColumn<TransaksiBooking, String> colId, colPenyewa, colVilla, colStatus;
@@ -106,6 +105,7 @@ public class Booking implements Initializable {
 
     private void setupStatusCombo() {
         cbStatus.setItems(FXCollections.observableArrayList(DAFTAR_STATUS));
+        cbStatus.setDisable(true); // Default disable, hanya aktif saat mode ubah
     }
 
     private void loadComboPenyewa() {
@@ -213,6 +213,9 @@ public class Booking implements Initializable {
         tableBooking.setItems(hasil);
     }
 
+    // ===========================================================
+    // HANDLE SIMPAN (BOOKING BARU)
+    // ===========================================================
     @FXML
     private void handleSimpan() {
         if (!validasi()) return;
@@ -239,12 +242,13 @@ public class Booking implements Initializable {
         }
     }
 
-    // >>> Fungsi utama admin: konfirmasi/ubah status booking (Pending -> Dikonfirmasi -> ... dst)
-    // Villa otomatis ke-update statusnya lewat trigger trg_Booking_UpdateVillaStatus di DB.
+    // ===========================================================
+    // HANDLE UBAH (UPDATE BOOKING + STATUS)
+    // ===========================================================
     @FXML
-    private void handleKonfirmasi() {
+    private void handleUbah() {
         if (txtId.getText().isEmpty()) {
-            notif(NotifUtil.Type.WARNING, "Pilih data booking yang ingin dikonfirmasi terlebih dahulu!");
+            notif(NotifUtil.Type.WARNING, "Pilih data booking yang ingin diubah terlebih dahulu!");
             return;
         }
         if (!validasi()) return;
@@ -254,11 +258,11 @@ public class Booking implements Initializable {
         }
 
         ConfirmUtil.show(txtJumlahTamu,
-                "Ubah status booking " + txtId.getText() + " menjadi \"" + cbStatus.getValue() + "\"?",
-                this::prosesKonfirmasi);
+                "Ubah data booking " + txtId.getText() + " menjadi status \"" + cbStatus.getValue() + "\"?",
+                this::prosesUbah);
     }
 
-    private void prosesKonfirmasi() {
+    private void prosesUbah() {
         Koneksi k = new Koneksi();
         try {
             // 1. Update data booking (tanggal, villa, jumlah tamu, catatan)
@@ -280,17 +284,20 @@ public class Booking implements Initializable {
             csStatus.setString(3, cbStatus.getValue());
             csStatus.execute();
 
-            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.SUCCESS, "Booking berhasil dikonfirmasi!",
+            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.SUCCESS, "Booking berhasil diubah!",
                     () -> { setClose(); loadTable(); });
         } catch (NumberFormatException e) {
             notif(NotifUtil.Type.WARNING, "Jumlah tamu harus berupa angka!");
         } catch (Exception e) {
-            notif(NotifUtil.Type.ERROR, "Gagal mengonfirmasi: " + e.getMessage());
+            notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
+    // ===========================================================
+    // HANDLE HAPUS (BATAL BOOKING)
+    // ===========================================================
     @FXML
     private void handleHapus() {
         if (txtId.getText().isEmpty()) {
@@ -335,6 +342,9 @@ public class Booking implements Initializable {
         notif(NotifUtil.Type.SUCCESS, "Fitur cetak struk siap dihubungkan ke sp_CetakStrukBooking.");
     }
 
+    // ===========================================================
+    // FORM HELPERS
+    // ===========================================================
     private void populateForm(TransaksiBooking b) {
         txtId.setText(b.getIdTrsBooking());
         selectComboByName(cbPenyewa, b.getNamaPenyewa());
@@ -345,11 +355,12 @@ public class Booking implements Initializable {
         txtGrandHarga.setText(String.valueOf(b.getGrandHarga()));
         cbStatus.setValue(b.getStatusBooking());
 
-        cbPenyewa.setDisable(true); // penyewa gak boleh diganti pas konfirmasi/edit
+        // Nonaktifkan field yang tidak boleh diubah saat mode ubah
+        cbPenyewa.setDisable(true);
         cbStatus.setDisable(false);
 
         btnSimpan.setDisable(true);
-        btnKonfirmasi.setDisable(false);
+        btnUbah.setDisable(false);
         btnHapus.setDisable(false);
     }
 
@@ -375,15 +386,15 @@ public class Booking implements Initializable {
         cbPenyewa.setValue(null);
         cbVilla.setValue(null);
         cbStatus.setValue(null);
+        cbStatus.setDisable(true);
         dpCheckin.setValue(null);
         dpCheckout.setValue(null);
         cbPenyewa.setDisable(false);
-        cbStatus.setDisable(true); // status cuma relevan pas mode konfirmasi/edit
         hargaVillaTerpilih = 0;
         tableBooking.getSelectionModel().clearSelection();
 
         btnSimpan.setDisable(false);
-        btnKonfirmasi.setDisable(true);
+        btnUbah.setDisable(true);
         btnHapus.setDisable(true);
     }
 

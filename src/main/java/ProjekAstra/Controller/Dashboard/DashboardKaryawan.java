@@ -18,10 +18,9 @@ public class DashboardKaryawan {
     @FXML
     private Label lblJudul;
 
-
-
+    // ===== BUTTON MENU =====
     @FXML
-    private Button btnPemilik;
+    private Button btnKaryawan;      // <-- GANTI: btnPemilik -> btnKaryawan
 
     @FXML
     private Button btnPenyewa;
@@ -41,21 +40,25 @@ public class DashboardKaryawan {
     @FXML
     private Button btnTransaksiRefund;
 
-
     @FXML
     public void initialize() {
-        handlePemilik();
+        // Default tampilan pertama = Karyawan
+        handleKaryawan();
     }
 
+    // ===========================================================
+    // HANDLE MENU
+    // ===========================================================
 
     @FXML
-    private void handlePemilik() {
+    private void handleKaryawan() {
         loadContent(
-                "/UICrud/UICrudPemilik.fxml",
-                "Data Pemilik"
+                "/UICrud/UICrudKaryawan.fxml",
+                "Data Karyawan"
         );
-        setActiveButton(btnPemilik);
+        setActiveButton(btnKaryawan);
     }
+
     @FXML
     private void handlePenyewa() {
         loadContent(
@@ -64,6 +67,7 @@ public class DashboardKaryawan {
         );
         setActiveButton(btnPenyewa);
     }
+
     @FXML
     private void handleVilla() {
         loadContent(
@@ -72,6 +76,7 @@ public class DashboardKaryawan {
         );
         setActiveButton(btnVilla);
     }
+
     @FXML
     private void handleKategori() {
         loadContent(
@@ -80,6 +85,7 @@ public class DashboardKaryawan {
         );
         setActiveButton(btnKategori);
     }
+
     @FXML
     private void handleFasilitas() {
         loadContent(
@@ -88,6 +94,7 @@ public class DashboardKaryawan {
         );
         setActiveButton(btnFasilitas);
     }
+
     @FXML
     private void handleTransaksiBooking() {
         loadContent(
@@ -96,6 +103,7 @@ public class DashboardKaryawan {
         );
         setActiveButton(btnTransaksiBooking);
     }
+
     @FXML
     private void handleTransaksiRefund() {
         System.out.println("Membuka halaman Transaksi Refund");
@@ -105,25 +113,31 @@ public class DashboardKaryawan {
         );
         setActiveButton(btnTransaksiRefund);
     }
+
+    // ===========================================================
+    // LOGOUT
+    // ===========================================================
     @FXML
     private void handleLogout() {
         MainApp.switchScene("/UIMainView/UITampilan.fxml");
     }
+
+    // ===========================================================
+    // UTILITY
+    // ===========================================================
     private void loadContent(String fxmlPath, String judul) {
         try {
-            FXMLLoader loader =
-                    new FXMLLoader(getClass().getResource(fxmlPath));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent view = loader.load();
             contentPane.getChildren().setAll(view);
             lblJudul.setText(judul);
 
         } catch (IOException | NullPointerException e) {
-            System.out.println(
-                    "Gagal membuka file : " + fxmlPath
-            );
+            System.out.println("Gagal membuka file : " + fxmlPath);
             e.printStackTrace();
         }
     }
+
     private void setActiveButton(Button active) {
         String aktif =
                 "-fx-background-color: white;" +
@@ -132,7 +146,6 @@ public class DashboardKaryawan {
                         "-fx-font-weight: bold;" +
                         "-fx-cursor: hand;";
 
-
         String nonAktif =
                 "-fx-background-color: transparent;" +
                         "-fx-text-fill: white;" +
@@ -140,27 +153,12 @@ public class DashboardKaryawan {
                         "-fx-font-weight: bold;" +
                         "-fx-cursor: hand;";
 
-
-        btnPemilik.setStyle(
-                btnPemilik == active ? aktif : nonAktif
-        );
-        btnPenyewa.setStyle(
-                btnPenyewa == active ? aktif : nonAktif
-        );
-        btnVilla.setStyle(
-                btnVilla == active ? aktif : nonAktif
-        );
-        btnKategori.setStyle(
-                btnKategori == active ? aktif : nonAktif
-        );
-        btnFasilitas.setStyle(
-                btnFasilitas == active ? aktif : nonAktif
-        );
-        btnTransaksiBooking.setStyle(
-                btnTransaksiBooking == active ? aktif : nonAktif
-        );
-        btnTransaksiRefund.setStyle(
-                btnTransaksiRefund == active ? aktif : nonAktif
-        );
+        btnKaryawan.setStyle(btnKaryawan == active ? aktif : nonAktif);
+        btnPenyewa.setStyle(btnPenyewa == active ? aktif : nonAktif);
+        btnVilla.setStyle(btnVilla == active ? aktif : nonAktif);
+        btnKategori.setStyle(btnKategori == active ? aktif : nonAktif);
+        btnFasilitas.setStyle(btnFasilitas == active ? aktif : nonAktif);
+        btnTransaksiBooking.setStyle(btnTransaksiBooking == active ? aktif : nonAktif);
+        btnTransaksiRefund.setStyle(btnTransaksiRefund == active ? aktif : nonAktif);
     }
 }

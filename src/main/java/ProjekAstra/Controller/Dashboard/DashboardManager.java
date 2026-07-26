@@ -44,19 +44,13 @@ public class DashboardManager {
 
     @FXML
     private void handleLaporanTransaksi() {
-        loadContent(
-                "/UILaporan/UILaporanTransaksi.fxml",
-                "Laporan Transaksi"
-        );
+        loadContent("/UILaporan/UILaporanBooking.fxml", "Laporan Transaksi Booking");
         setActiveButton(btnLaporanTransaksi);
     }
 
     @FXML
     private void handleLaporanRefund() {
-        loadContent(
-                "/UILaporan/UILaporanRefund.fxml",
-                "Laporan Refund"
-        );
+        loadContent("/UILaporan/UILaporanRefund.fxml", "Laporan Transaksi Refund");
         setActiveButton(btnLaporanRefund);
     }
 

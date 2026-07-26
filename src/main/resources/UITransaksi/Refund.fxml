@@ -30,14 +30,21 @@
                 <TextArea fx:id="txtAlasan" promptText="Alasan Refund" prefRowCount="3" wrapText="true" styleClass="input-field"/>
                 <TextArea fx:id="txtDeskripsi" promptText="Deskripsi (opsional)" prefRowCount="2" wrapText="true" styleClass="input-field"/>
 
-                <Label text="Status Transaksi" style="-fx-font-size: 11px; -fx-text-fill: #6b6b6b;"/>
+                <!-- TANGGAL PENGAJUAN & TANGGAL REFUND -->
+                <HBox spacing="10">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Tanggal Pengajuan" style="-fx-font-size: 11px; -fx-text-fill: #6b6b6b;"/>
+                        <DatePicker fx:id="dpTglPengajuan" maxWidth="Infinity" styleClass="input-field"/>
+                    </VBox>
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label text="Tanggal Refund" style="-fx-font-size: 11px; -fx-text-fill: #6b6b6b;"/>
+                        <DatePicker fx:id="dpTglRefund" maxWidth="Infinity" styleClass="input-field"/>
+                    </VBox>
+                </HBox>
+
+                <!-- STATUS DI BAWAH TANGGAL -->
+                <Label text="Status Refund" style="-fx-font-size: 11px; -fx-text-fill: #6b6b6b;"/>
                 <ComboBox fx:id="cbStatus" promptText="Status Refund" maxWidth="Infinity" styleClass="input-field"/>
-
-                <Label text="Tanggal Pengajuan" style="-fx-font-size: 11px; -fx-text-fill: #6b6b6b;"/>
-                <DatePicker fx:id="dpTglPengajuan" maxWidth="Infinity" styleClass="input-field"/>
-
-                <Label text="Tanggal Refund" style="-fx-font-size: 11px; -fx-text-fill: #6b6b6b;"/>
-                <DatePicker fx:id="dpTglRefund" maxWidth="Infinity" styleClass="input-field"/>
 
                 <Region VBox.vgrow="ALWAYS"/>
                 <TextField fx:id="txtCari" promptText="🔍 Cari refund..." styleClass="input-field"/>

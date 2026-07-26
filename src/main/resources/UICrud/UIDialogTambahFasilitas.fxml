@@ -15,7 +15,10 @@
         <font><Font name="System Bold" size="16"/></font>
     </Label>
 
+    <Label text="Pilih fasilitas yang ingin ditambahkan:" styleClass="label-regular"/>
     <ComboBox fx:id="cbFasilitas" promptText="Pilih Fasilitas" maxWidth="Infinity" styleClass="input-field"/>
+
+    <Label text="Jumlah fasilitas:" styleClass="label-regular"/>
     <TextField fx:id="txtQty" promptText="Qty" styleClass="input-field"/>
 
     <Region prefHeight="8"/>

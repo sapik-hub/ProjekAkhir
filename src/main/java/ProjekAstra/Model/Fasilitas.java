@@ -16,12 +16,22 @@ public class Fasilitas {
     }
 
     public String getIdFasilitas() { return idFasilitas; }
-    public String getNamaFasilitas() { return namaFasilitas; }
-    public int getJumlah() { return jumlah; }
-    public String getDeskripsi() { return deskripsi; }
-    public String getStatus() { return status; }
+    public void setIdFasilitas(String idFasilitas) { this.idFasilitas = idFasilitas; }
 
+    public String getNamaFasilitas() { return namaFasilitas; }
     public void setNamaFasilitas(String namaFasilitas) { this.namaFasilitas = namaFasilitas; }
+
+    public int getJumlah() { return jumlah; }
     public void setJumlah(int jumlah) { this.jumlah = jumlah; }
+
+    public String getDeskripsi() { return deskripsi; }
     public void setDeskripsi(String deskripsi) { this.deskripsi = deskripsi; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    @Override
+    public String toString() {
+        return namaFasilitas;
+    }
 }

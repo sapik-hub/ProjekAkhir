@@ -31,13 +31,13 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.UUID;
-import javafx.scene.control.TableCell;
 
 public class CrudVilla implements Initializable {
 
@@ -45,7 +45,7 @@ public class CrudVilla implements Initializable {
     @FXML private ComboBox<String> cbKategori, cbStatus;
     @FXML private Button btnSimpan, btnUbah, btnHapus;
 
-    // >>> FOTO
+    // FOTO
     @FXML private ImageView imgPreview;
     @FXML private Button btnPilihFoto;
 
@@ -54,7 +54,7 @@ public class CrudVilla implements Initializable {
     @FXML private TableColumn<Villa, Integer> colKapasitas;
     @FXML private TableColumn<Villa, BigDecimal> colHargaWeekday, colHargaWeekend;
 
-    // >>> FASILITAS
+    // FASILITAS
     @FXML private Button btnBukaDialogFasilitas, btnHapusFasilitas;
     @FXML private TableView<DetailFasilitas> tableFasilitasVilla;
     @FXML private TableColumn<DetailFasilitas, String> colFasNama, colFasDeskripsi;
@@ -63,7 +63,6 @@ public class CrudVilla implements Initializable {
     private final ObservableList<Villa> listVilla = FXCollections.observableArrayList();
     private final ObservableList<DetailFasilitas> listFasilitasVilla = FXCollections.observableArrayList();
 
-    // >>> FOTO: file yang baru dipilih user (belum di-copy ke folder foto) & nama foto lama waktu mode edit
     private File fotoTerpilih;
     private String fotoLama;
 
@@ -71,6 +70,7 @@ public class CrudVilla implements Initializable {
     static {
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(new Locale("id", "ID"));
         symbols.setGroupingSeparator('.');
+        symbols.setDecimalSeparator(',');
         RUPIAH_FORMAT = new DecimalFormat("#,##0", symbols);
     }
 
@@ -115,16 +115,15 @@ public class CrudVilla implements Initializable {
     }
 
     private void setupHargaColumn(TableColumn<Villa, BigDecimal> kolom) {
-        kolom.setCellFactory(new Callback<>() {
+        kolom.setCellFactory(column -> new TableCell<>() {
             @Override
-            public TableCell<Villa, BigDecimal> call(TableColumn<Villa, BigDecimal> column) {
-                return new TableCell<>() {
-                    @Override
-                    protected void updateItem(BigDecimal harga, boolean empty) {
-                        super.updateItem(harga, empty);
-                        setText((empty || harga == null) ? null : "Rp " + RUPIAH_FORMAT.format(harga));
-                    }
-                };
+            protected void updateItem(BigDecimal harga, boolean empty) {
+                super.updateItem(harga, empty);
+                if (empty || harga == null) {
+                    setText(null);
+                } else {
+                    setText("Rp " + RUPIAH_FORMAT.format(harga));
+                }
             }
         });
     }
@@ -139,6 +138,7 @@ public class CrudVilla implements Initializable {
                 cbKategori.getItems().add(rs.getString("Id_Kategori") + " - " + rs.getString("Nama_Kategori"));
             }
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal memuat data kategori: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
@@ -163,6 +163,7 @@ public class CrudVilla implements Initializable {
             }
             tableFasilitasVilla.setItems(listFasilitasVilla);
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal memuat fasilitas villa: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
@@ -191,6 +192,7 @@ public class CrudVilla implements Initializable {
             }
             tableVilla.setItems(listVilla);
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal memuat data: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
@@ -212,7 +214,6 @@ public class CrudVilla implements Initializable {
         tableVilla.setItems(hasil);
     }
 
-    // >>> FOTO: buka file chooser buat pilih gambar
     @FXML
     private void handlePilihFoto() {
         FileChooser fc = new FileChooser();
@@ -222,12 +223,15 @@ public class CrudVilla implements Initializable {
         File file = fc.showOpenDialog(txtNamaVilla.getScene().getWindow());
         if (file != null) {
             fotoTerpilih = file;
-            imgPreview.setImage(new Image(file.toURI().toString()));
+            try {
+                imgPreview.setImage(new Image(file.toURI().toString()));
+            } catch (Exception e) {
+                e.printStackTrace();
+                notif(NotifUtil.Type.WARNING, "Gagal memuat gambar: " + e.getMessage());
+            }
         }
     }
 
-    // >>> FOTO: copy foto yang baru dipilih ke folder penyimpanan, generate nama unik.
-    // Kalau user gak pilih foto baru, tetap pakai foto lama (bisa null kalau villa baru & belum pernah diisi foto)
     private String simpanFotoJikaAda(String fotoFallback) {
         if (fotoTerpilih == null) {
             return fotoFallback;
@@ -241,39 +245,50 @@ public class CrudVilla implements Initializable {
             Files.copy(fotoTerpilih.toPath(), tujuan.toPath(), StandardCopyOption.REPLACE_EXISTING);
             return namaBaru;
         } catch (IOException e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal menyimpan foto: " + e.getMessage());
             return fotoFallback;
         }
     }
 
+    // ===========================================================
+    // CRUD ACTIONS
+    // ===========================================================
     @FXML
     private void handleSimpan() {
         if (!validasiInsert()) return;
 
         String idBaru = txtId.getText();
-        String namaFoto = simpanFotoJikaAda(null); // villa baru: gak ada foto lama
+        String namaFoto = simpanFotoJikaAda(null);
 
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_InsertVilla(?, ?, ?, ?, ?, ?, ?, ?)}");
+            // sp_InsertVilla hanya 7 parameter (HargaWeekend otomatis dihitung di SP)
+            CallableStatement cs = k.conn.prepareCall("{call sp_InsertVilla(?, ?, ?, ?, ?, ?, ?)}");
+
             cs.setString(1, getIdFromCombo(cbKategori.getValue()));
             cs.setString(2, txtNamaVilla.getText().trim());
             cs.setInt(3, Integer.parseInt(txtKapasitas.getText().trim()));
             cs.setBigDecimal(4, new BigDecimal(unformatRupiah(txtHargaWeekday.getText().trim())));
-            cs.setBigDecimal(5, new BigDecimal(unformatRupiah(txtHargaWeekend.getText().trim())));
-            cs.setString(6, txtAlamat.getText().trim());
-            if (namaFoto == null) cs.setNull(7, Types.VARCHAR); else cs.setString(7, namaFoto);
-            cs.setString(8, cbStatus.getValue());
+            cs.setString(5, txtAlamat.getText().trim());
+            if (namaFoto == null) cs.setNull(6, Types.VARCHAR); else cs.setString(6, namaFoto);
+            cs.setString(7, cbStatus.getValue());
             cs.execute();
 
-            NotifUtil.show(txtNamaVilla, NotifUtil.Type.SUCCESS, "Villa berhasil ditambahkan! Sekarang kamu bisa tambahkan fasilitasnya.",
+            NotifUtil.show(txtNamaVilla, NotifUtil.Type.SUCCESS, "Villa berhasil ditambahkan!",
                     () -> {
                         loadTable();
                         selectVillaById(idBaru);
                     });
+
         } catch (NumberFormatException e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.WARNING, "Kapasitas dan Harga harus berupa angka!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            notif(NotifUtil.Type.ERROR, "Gagal menyimpan: " + e.getMessage());
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal menyimpan: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
@@ -298,20 +313,21 @@ public class CrudVilla implements Initializable {
         }
         if (!validasiUpdate()) return;
 
-        String namaFoto = simpanFotoJikaAda(fotoLama); // kalau gak pilih foto baru, pertahankan foto lama
+        String namaFoto = simpanFotoJikaAda(fotoLama);
 
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_UpdateVilla(?, ?, ?, ?, ?, ?, ?, ?, ?)}");
+            // sp_UpdateVilla ada 8 parameter
+            CallableStatement cs = k.conn.prepareCall("{call sp_UpdateVilla(?, ?, ?, ?, ?, ?, ?, ?)}");
+
             cs.setString(1, txtId.getText());
             cs.setString(2, getIdFromCombo(cbKategori.getValue()));
             cs.setString(3, txtNamaVilla.getText().trim());
             cs.setInt(4, Integer.parseInt(txtKapasitas.getText().trim()));
             cs.setBigDecimal(5, new BigDecimal(unformatRupiah(txtHargaWeekday.getText().trim())));
-            cs.setBigDecimal(6, new BigDecimal(unformatRupiah(txtHargaWeekend.getText().trim())));
-            cs.setString(7, txtAlamat.getText().trim());
-            if (namaFoto == null) cs.setNull(8, Types.VARCHAR); else cs.setString(8, namaFoto);
-            cs.setString(9, cbStatus.getValue());
+            cs.setString(6, txtAlamat.getText().trim());
+            if (namaFoto == null) cs.setNull(7, Types.VARCHAR); else cs.setString(7, namaFoto);
+            cs.setString(8, cbStatus.getValue());
             cs.execute();
 
             NotifUtil.show(txtNamaVilla, NotifUtil.Type.SUCCESS, "Villa berhasil diubah!",
@@ -320,8 +336,13 @@ public class CrudVilla implements Initializable {
                         loadTable();
                     });
         } catch (NumberFormatException e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.WARNING, "Kapasitas dan Harga harus berupa angka!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
@@ -340,6 +361,10 @@ public class CrudVilla implements Initializable {
                 () -> {
                     Koneksi k = new Koneksi();
                     try {
+                        if (fotoLama != null && !fotoLama.isEmpty()) {
+                            FileUtil.hapusFoto(fotoLama);
+                        }
+
                         CallableStatement cs = k.conn.prepareCall("{call sp_DeleteVilla(?)}");
                         cs.setString(1, txtId.getText());
                         cs.execute();
@@ -350,6 +375,7 @@ public class CrudVilla implements Initializable {
                                     loadTable();
                                 });
                     } catch (Exception e) {
+                        e.printStackTrace();
                         notif(NotifUtil.Type.ERROR, "Gagal menghapus (mungkin masih ada data Fasilitas/Booking terkait): " + e.getMessage());
                     } finally {
                         try { k.conn.close(); } catch (Exception ignored) {}
@@ -362,6 +388,9 @@ public class CrudVilla implements Initializable {
         setClose();
     }
 
+    // ===========================================================
+    // FASILITAS
+    // ===========================================================
     @FXML
     private void handleBukaDialogFasilitas() {
         if (txtId.getText().isEmpty()) {
@@ -376,7 +405,7 @@ public class CrudVilla implements Initializable {
             controller.setIdVilla(txtId.getText());
 
             Stage dialogStage = new Stage();
-            dialogStage.setTitle("Tambah Fasilitas");
+            dialogStage.setTitle("Tambah Fasilitas Villa");
             dialogStage.initModality(Modality.APPLICATION_MODAL);
             dialogStage.setScene(new Scene(root));
             dialogStage.setResizable(false);
@@ -384,9 +413,9 @@ public class CrudVilla implements Initializable {
 
             if (controller.isBerhasilDitambahkan()) {
                 loadFasilitasVilla(txtId.getText());
-                NotifUtil.show(txtNamaVilla, NotifUtil.Type.SUCCESS, "Fasilitas berhasil ditambahkan!");
             }
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal membuka form fasilitas: " + e.getMessage());
         }
     }
@@ -409,7 +438,9 @@ public class CrudVilla implements Initializable {
                         cs.setString(2, selected.getIdFasilitas());
                         cs.execute();
                         loadFasilitasVilla(txtId.getText());
+                        NotifUtil.show(txtNamaVilla, NotifUtil.Type.SUCCESS, "Fasilitas berhasil dihapus!");
                     } catch (Exception e) {
+                        e.printStackTrace();
                         notif(NotifUtil.Type.ERROR, "Gagal menghapus fasilitas: " + e.getMessage());
                     } finally {
                         try { k.conn.close(); } catch (Exception ignored) {}
@@ -417,22 +448,35 @@ public class CrudVilla implements Initializable {
                 });
     }
 
+    // ===========================================================
+    // FORM HELPERS
+    // ===========================================================
     private void populateForm(Villa v) {
         txtId.setText(v.getIdVilla());
         txtNamaVilla.setText(v.getNamaVilla());
         txtKapasitas.setText(String.valueOf(v.getKapasitas()));
         txtHargaWeekday.setText(formatRupiah(v.getHargaWeekday().toBigInteger().toString()));
+        txtHargaWeekend.setText(formatRupiah(v.getHargaWeekend().toBigInteger().toString()));
         txtAlamat.setText(v.getAlamatVilla());
         cbStatus.setValue(v.getStatus());
 
         selectComboByName(cbKategori, v.getNamaKategori());
 
-        // >>> FOTO: reset pilihan file baru, tampilkan foto yang sudah tersimpan (kalau ada)
         fotoTerpilih = null;
         fotoLama = v.getFoto();
         if (fotoLama != null) {
-            File file = new File(FileUtil.getFullPath(fotoLama));
-            imgPreview.setImage(file.exists() ? new Image(file.toURI().toString()) : null);
+            String fullPath = FileUtil.getFullPath(fotoLama);
+            if (fullPath != null) {
+                File file = new File(fullPath);
+                if (file.exists()) {
+                    try {
+                        imgPreview.setImage(new Image(file.toURI().toString()));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        imgPreview.setImage(null);
+                    }
+                }
+            }
         } else {
             imgPreview.setImage(null);
         }
@@ -448,6 +492,7 @@ public class CrudVilla implements Initializable {
     private void setFasilitasPanelEnabled(boolean enabled) {
         btnBukaDialogFasilitas.setDisable(!enabled);
         btnHapusFasilitas.setDisable(!enabled);
+        tableFasilitasVilla.setDisable(!enabled);
     }
 
     private void selectComboByName(ComboBox<String> combo, String nama) {
@@ -475,7 +520,6 @@ public class CrudVilla implements Initializable {
         cbStatus.setValue(null);
         tableVilla.getSelectionModel().clearSelection();
 
-        // >>> FOTO: reset preview & state foto
         fotoTerpilih = null;
         fotoLama = null;
         imgPreview.setImage(null);
@@ -490,6 +534,9 @@ public class CrudVilla implements Initializable {
         setFasilitasPanelEnabled(false);
     }
 
+    // ===========================================================
+    // FORMATTER RUPIAH
+    // ===========================================================
     private void setupHargaFormatter(TextField field) {
         field.textProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal.equals(oldVal)) return;
@@ -504,10 +551,10 @@ public class CrudVilla implements Initializable {
         });
     }
 
-    // >>> HARGA WEEKEND: otomatis dihitung dari Harga Weekday x 1.5, field dikunci dari input manual
     private void setupHargaWeekendAutoCalc() {
         txtHargaWeekend.setEditable(false);
         txtHargaWeekend.setFocusTraversable(false);
+        txtHargaWeekend.setStyle("-fx-background-color: #f5f5f5; -fx-text-fill: #666666;");
 
         txtHargaWeekday.textProperty().addListener((obs, oldVal, newVal) -> {
             String digitsOnly = unformatRupiah(newVal);
@@ -515,10 +562,15 @@ public class CrudVilla implements Initializable {
                 txtHargaWeekend.setText("");
                 return;
             }
-            BigDecimal weekday = new BigDecimal(digitsOnly);
-            BigDecimal weekend = weekday.multiply(new BigDecimal("1.5"))
-                    .setScale(0, RoundingMode.HALF_UP);
-            txtHargaWeekend.setText(formatRupiah(weekend.toBigInteger().toString()));
+            try {
+                BigDecimal weekday = new BigDecimal(digitsOnly);
+                BigDecimal weekend = weekday.multiply(new BigDecimal("1.5"))
+                        .setScale(0, RoundingMode.HALF_UP);
+                txtHargaWeekend.setText(formatRupiah(weekend.toBigInteger().toString()));
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+                txtHargaWeekend.setText("");
+            }
         });
     }
 
@@ -539,11 +591,16 @@ public class CrudVilla implements Initializable {
         return formatted == null ? "" : formatted.replaceAll("[^0-9]", "");
     }
 
+    // ===========================================================
+    // VALIDASI
+    // ===========================================================
     private boolean validasiInsert() {
         if (cbKategori.getValue() == null ||
-                txtNamaVilla.getText().trim().isEmpty() || txtKapasitas.getText().trim().isEmpty() ||
+                txtNamaVilla.getText().trim().isEmpty() ||
+                txtKapasitas.getText().trim().isEmpty() ||
                 txtHargaWeekday.getText().trim().isEmpty() ||
-                txtAlamat.getText().trim().isEmpty() || cbStatus.getValue() == null) {
+                txtAlamat.getText().trim().isEmpty() ||
+                cbStatus.getValue() == null) {
             notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return false;
         }
@@ -557,7 +614,7 @@ public class CrudVilla implements Initializable {
     private boolean validasiFormat() {
         String namaVilla = txtNamaVilla.getText().trim();
         String kapasitas = txtKapasitas.getText().trim();
-        String hargaWeekday = unformatRupiah(txtHargaWeekday.getText().trim());
+        String harga = unformatRupiah(txtHargaWeekday.getText().trim());
         String alamat = txtAlamat.getText().trim();
 
         if (!namaVilla.matches("^[^0-9]+$")) {
@@ -570,8 +627,8 @@ public class CrudVilla implements Initializable {
             return false;
         }
 
-        if (hargaWeekday.isEmpty() || !hargaWeekday.matches("^[0-9]+$")) {
-            notif(NotifUtil.Type.WARNING, "Harga Weekday harus berupa angka dan tidak boleh mengandung huruf!");
+        if (harga.isEmpty() || !harga.matches("^[0-9]+$")) {
+            notif(NotifUtil.Type.WARNING, "Harga harus berupa angka dan tidak boleh mengandung huruf!");
             return false;
         }
 

@@ -10,13 +10,13 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import java.sql.PreparedStatement;
 
 import java.net.URL;
 import java.sql.CallableStatement;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.ResourceBundle;
 
 public class CrudKaryawan implements Initializable {
@@ -26,7 +26,8 @@ public class CrudKaryawan implements Initializable {
     @FXML private TextArea txtAlamat;
     @FXML private PasswordField txtPassword;
     @FXML private TextField txtUsername;
-    @FXML private DatePicker dpTanggalMasuk;
+    @FXML private DatePicker dpTanggalLahir;  // <-- DIGANTI dari TanggalMasuk
+    @FXML private DatePicker dpTanggalMasuk;   // <-- TETAP ADA untuk tanggal masuk
     @FXML private ComboBox<String> cbRole;
     @FXML private Label lblStatus;
     @FXML private Button btnSimpan, btnUbah, btnHapus;
@@ -35,7 +36,7 @@ public class CrudKaryawan implements Initializable {
     @FXML private TableView<Karyawan> tableKaryawan;
     @FXML private TableColumn<Karyawan, String> colId, colNama, colNoTelp, colAlamat, colUsername, colStatus, colRole;
     @FXML private TableColumn<Karyawan, Integer> colUmur;
-    @FXML private TableColumn<Karyawan, LocalDate> colTglMasuk;
+    @FXML private TableColumn<Karyawan, LocalDate> colTglMasuk, colTglLahir;
 
     private final ObservableList<Karyawan> listKaryawan = FXCollections.observableArrayList();
 
@@ -49,6 +50,16 @@ public class CrudKaryawan implements Initializable {
         setupTable();
         loadTable();
         setClose();
+
+        // ===== AUTO-CALC UMUR dari Tanggal Lahir =====
+        dpTanggalLahir.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                int umur = hitungUmur(newVal);
+                txtUmur.setText(String.valueOf(umur));
+            } else {
+                txtUmur.clear();
+            }
+        });
 
         tableKaryawan.setOnMouseClicked(e -> {
             Karyawan k = tableKaryawan.getSelectionModel().getSelectedItem();
@@ -64,10 +75,21 @@ public class CrudKaryawan implements Initializable {
         colNoTelp.setCellValueFactory(new PropertyValueFactory<>("noTelp"));
         colUmur.setCellValueFactory(new PropertyValueFactory<>("umur"));
         colAlamat.setCellValueFactory(new PropertyValueFactory<>("alamat"));
+        colTglLahir.setCellValueFactory(new PropertyValueFactory<>("tanggalLahir"));
         colTglMasuk.setCellValueFactory(new PropertyValueFactory<>("tanggalMasuk"));
         colUsername.setCellValueFactory(new PropertyValueFactory<>("username"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
         colRole.setCellValueFactory(new PropertyValueFactory<>("role"));
+    }
+
+    // ===========================================================
+    // HITUNG UMUR OTOMATIS
+    // ===========================================================
+    private int hitungUmur(LocalDate tanggalLahir) {
+        if (tanggalLahir == null) return 0;
+        LocalDate today = LocalDate.now();
+        Period period = Period.between(tanggalLahir, today);
+        return period.getYears();
     }
 
     // ===========================================================
@@ -82,7 +104,8 @@ public class CrudKaryawan implements Initializable {
             ResultSet rs = cs.executeQuery();
 
             while (rs.next()) {
-                Date tgl = rs.getDate("Tanggal_Masuk");
+                Date tglLahir = rs.getDate("Tanggal_Lahir");
+                Date tglMasuk = rs.getDate("Tanggal_Masuk");
                 listKaryawan.add(new Karyawan(
                         rs.getString("Id_Karyawan"),
                         rs.getString("Nama_Karyawan"),
@@ -90,7 +113,8 @@ public class CrudKaryawan implements Initializable {
                         rs.getString("Alamat"),
                         rs.getInt("Umur"),
                         rs.getString("Username"),
-                        tgl != null ? tgl.toLocalDate() : null,
+                        tglLahir != null ? tglLahir.toLocalDate() : null,
+                        tglMasuk != null ? tglMasuk.toLocalDate() : null,
                         rs.getString("Status"),
                         rs.getString("Role")
                 ));
@@ -127,15 +151,16 @@ public class CrudKaryawan implements Initializable {
 
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_InsertKaryawan(?, ?, ?, ?, ?, ?, ?, ?)}");
+            CallableStatement cs = k.conn.prepareCall("{call sp_InsertKaryawan(?, ?, ?, ?, ?, ?, ?, ?, ?)}");
             cs.setString(1, txtNama.getText().trim());
             cs.setString(2, txtNoTelp.getText().trim());
             cs.setString(3, txtAlamat.getText().trim());
             cs.setInt(4, Integer.parseInt(txtUmur.getText().trim()));
-            cs.setString(5, txtUsername.getText().trim());
-            cs.setString(6, txtPassword.getText().trim());
-            cs.setDate(7, Date.valueOf(dpTanggalMasuk.getValue()));
-            cs.setString(8, cbRole.getValue());
+            cs.setDate(5, Date.valueOf(dpTanggalLahir.getValue()));  // Tanggal Lahir
+            cs.setString(6, txtUsername.getText().trim());
+            cs.setString(7, txtPassword.getText().trim());
+            cs.setDate(8, Date.valueOf(dpTanggalMasuk.getValue()));  // Tanggal Masuk
+            cs.setString(9, cbRole.getValue());
             cs.execute();
 
             NotifUtil.show(txtNama, NotifUtil.Type.SUCCESS, "Data karyawan berhasil ditambahkan!",
@@ -168,13 +193,15 @@ public class CrudKaryawan implements Initializable {
     private void prosesUbah() {
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_UpdateKaryawan(?, ?, ?, ?, ?, ?)}");
+            CallableStatement cs = k.conn.prepareCall("{call sp_UpdateKaryawan(?, ?, ?, ?, ?, ?, ?, ?)}");
             cs.setString(1, txtId.getText());
             cs.setString(2, txtNama.getText().trim());
             cs.setString(3, txtNoTelp.getText().trim());
             cs.setString(4, txtAlamat.getText().trim());
             cs.setInt(5, Integer.parseInt(txtUmur.getText().trim()));
-            cs.setString(6, cbRole.getValue());
+            cs.setDate(6, Date.valueOf(dpTanggalLahir.getValue()));
+            cs.setDate(7, Date.valueOf(dpTanggalMasuk.getValue()));
+            cs.setString(8, cbRole.getValue());
             cs.execute();
 
             NotifUtil.show(txtNama, NotifUtil.Type.SUCCESS, "Data karyawan berhasil diubah!",
@@ -234,6 +261,7 @@ public class CrudKaryawan implements Initializable {
         txtNoTelp.setText(k.getNoTelp());
         txtUmur.setText(String.valueOf(k.getUmur()));
         txtAlamat.setText(k.getAlamat());
+        dpTanggalLahir.setValue(k.getTanggalLahir());
         dpTanggalMasuk.setValue(k.getTanggalMasuk());
         txtUsername.setText(k.getUsername());
         txtPassword.clear();
@@ -242,6 +270,7 @@ public class CrudKaryawan implements Initializable {
 
         txtUsername.setDisable(true);
         txtPassword.setDisable(true);
+        dpTanggalLahir.setDisable(true);
         dpTanggalMasuk.setDisable(true);
 
         btnSimpan.setDisable(true);
@@ -257,12 +286,14 @@ public class CrudKaryawan implements Initializable {
         txtAlamat.clear();
         txtUsername.clear();
         txtPassword.clear();
+        dpTanggalLahir.setValue(null);
         dpTanggalMasuk.setValue(null);
         cbRole.setValue(null);
         lblStatus.setText("-");
 
         txtUsername.setDisable(false);
         txtPassword.setDisable(false);
+        dpTanggalLahir.setDisable(false);
         dpTanggalMasuk.setDisable(false);
 
         tableKaryawan.getSelectionModel().clearSelection();
@@ -280,7 +311,7 @@ public class CrudKaryawan implements Initializable {
     private boolean validasiInsert() {
         if (txtNama.getText().trim().isEmpty() || txtNoTelp.getText().trim().isEmpty() ||
                 txtUmur.getText().trim().isEmpty() || txtAlamat.getText().trim().isEmpty() ||
-                dpTanggalMasuk.getValue() == null ||
+                dpTanggalLahir.getValue() == null || dpTanggalMasuk.getValue() == null ||
                 txtUsername.getText().trim().isEmpty() || txtPassword.getText().trim().isEmpty() ||
                 cbRole.getValue() == null) {
             notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
@@ -292,6 +323,7 @@ public class CrudKaryawan implements Initializable {
     private boolean validasiUpdate() {
         if (txtNama.getText().trim().isEmpty() || txtNoTelp.getText().trim().isEmpty() ||
                 txtUmur.getText().trim().isEmpty() || txtAlamat.getText().trim().isEmpty() ||
+                dpTanggalLahir.getValue() == null || dpTanggalMasuk.getValue() == null ||
                 cbRole.getValue() == null) {
             notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return false;
@@ -339,7 +371,7 @@ public class CrudKaryawan implements Initializable {
         Koneksi k = new Koneksi();
         try {
             String sql = "SELECT dbo.fnNextIdKaryawan() AS IdKaryawan";
-            PreparedStatement ps = k.conn.prepareStatement(sql);
+            java.sql.PreparedStatement ps = k.conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {

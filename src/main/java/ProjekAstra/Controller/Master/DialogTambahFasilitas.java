@@ -2,8 +2,10 @@ package ProjekAstra.Controller.Master;
 
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.Model.DetailFasilitas;
+import ProjekAstra.Model.Fasilitas;
 import ProjekAstra.Util.NotifUtil;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -18,8 +20,8 @@ import java.util.ResourceBundle;
 
 public class DialogTambahFasilitas implements Initializable {
 
-    @FXML private ComboBox<DetailFasilitas> cbFasilitas;
-    @FXML private TextField txtJumlahFasilitas;
+    @FXML private ComboBox<Fasilitas> cbFasilitas;
+    @FXML private TextField txtQty;
     @FXML private Button btnSimpanFasilitas;
 
     private String idVilla;
@@ -30,7 +32,6 @@ public class DialogTambahFasilitas implements Initializable {
         loadComboFasilitas();
     }
 
-    // Dipanggil dari CrudVilla sebelum dialog ditampilkan
     public void setIdVilla(String idVilla) {
         this.idVilla = idVilla;
     }
@@ -40,17 +41,21 @@ public class DialogTambahFasilitas implements Initializable {
     }
 
     private void loadComboFasilitas() {
-        cbFasilitas.setItems(FXCollections.observableArrayList());
+        ObservableList<Fasilitas> listFasilitas = FXCollections.observableArrayList();
         Koneksi k = new Koneksi();
         try {
             CallableStatement cs = k.conn.prepareCall("{call sp_GetAllFasilitas}");
             ResultSet rs = cs.executeQuery();
             while (rs.next()) {
-                cbFasilitas.getItems().add(new DetailFasilitas(
+                listFasilitas.add(new Fasilitas(
                         rs.getString("Id_Fasilitas"),
-                        rs.getString("Nama_Fasilitas")
+                        rs.getString("Nama_Fasilitas"),
+                        rs.getInt("Jumlah"),
+                        rs.getString("Deskripsi"),
+                        rs.getString("Status")
                 ));
             }
+            cbFasilitas.setItems(listFasilitas);
         } catch (Exception e) {
             notif(NotifUtil.Type.ERROR, "Gagal memuat data fasilitas: " + e.getMessage());
         } finally {
@@ -64,8 +69,9 @@ public class DialogTambahFasilitas implements Initializable {
             notif(NotifUtil.Type.WARNING, "Pilih fasilitas yang ingin ditambahkan!");
             return;
         }
-        String jumlahStr = txtJumlahFasilitas.getText().trim();
-        if (!jumlahStr.matches("^[1-9][0-9]*$")) {
+
+        String qtyStr = txtQty.getText().trim();
+        if (qtyStr.isEmpty() || !qtyStr.matches("^[1-9][0-9]*$")) {
             notif(NotifUtil.Type.WARNING, "Jumlah fasilitas harus berupa angka lebih dari 0!");
             return;
         }
@@ -75,13 +81,18 @@ public class DialogTambahFasilitas implements Initializable {
             CallableStatement cs = k.conn.prepareCall("{call sp_TambahFasilitasVilla(?, ?, ?)}");
             cs.setString(1, idVilla);
             cs.setString(2, cbFasilitas.getValue().getIdFasilitas());
-            cs.setInt(3, Integer.parseInt(jumlahStr));
+            cs.setInt(3, Integer.parseInt(qtyStr));
             cs.execute();
 
             berhasilDitambahkan = true;
-            tutupDialog();
+            NotifUtil.show(txtQty, NotifUtil.Type.SUCCESS, "Fasilitas berhasil ditambahkan!", 1.5, this::tutupDialog);
         } catch (Exception e) {
-            notif(NotifUtil.Type.ERROR, "Gagal menambah fasilitas: " + e.getMessage());
+            String errorMsg = e.getMessage();
+            if (errorMsg.contains("Fasilitas ini sudah ditambahkan")) {
+                notif(NotifUtil.Type.WARNING, "Fasilitas ini sudah ada di villa ini!");
+            } else {
+                notif(NotifUtil.Type.ERROR, "Gagal menambah fasilitas: " + errorMsg);
+            }
         } finally {
             try { k.conn.close(); } catch (Exception ignored) {}
         }
@@ -99,6 +110,6 @@ public class DialogTambahFasilitas implements Initializable {
     }
 
     private void notif(NotifUtil.Type type, String msg) {
-        NotifUtil.show(txtJumlahFasilitas, type, msg);
+        NotifUtil.show(txtQty, type, msg);
     }
 }

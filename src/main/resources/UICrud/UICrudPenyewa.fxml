@@ -21,17 +21,15 @@
                 </Label>
 
                 <TextField fx:id="txtId" promptText="ID Penyewa" editable="false" styleClass="input-field"/>
-                <TextField fx:id="txtNama" promptText="Nama" styleClass="input-field"/>
-                <TextField fx:id="txtNoTelp" promptText="No. Telp" styleClass="input-field"/>
+                <TextField fx:id="txtNama" promptText="Nama Lengkap" styleClass="input-field"/>
+                <TextField fx:id="txtNoTelp" promptText="No. Telepon" styleClass="input-field"/>
                 <TextField fx:id="txtNikKtp" promptText="NIK KTP (16 digit)"
                            onKeyTyped="#handleNikOnlyNumber" styleClass="input-field"/>
                 <DatePicker fx:id="dpTglLahir" promptText="Tanggal Lahir" maxWidth="Infinity" styleClass="input-field"/>
                 <TextField fx:id="txtAlamat" promptText="Alamat" styleClass="input-field"/>
-                <TextField fx:id="txtUsername" promptText="Username" styleClass="input-field"/>
-                <PasswordField fx:id="txtPassword" promptText="Password" styleClass="input-field"/>
 
                 <Region VBox.vgrow="ALWAYS"/>
-                <TextField fx:id="txtCari" promptText="🔍 Cari nama / ID penyewa..." styleClass="input-field"/>
+                <TextField fx:id="txtCari" promptText="🔍 Cari nama / ID / no telp..." styleClass="input-field"/>
             </VBox>
 
             <VBox HBox.hgrow="ALWAYS" styleClass="card">
@@ -44,8 +42,7 @@
                         <TableColumn fx:id="colNoTelp" text="No. Telp" prefWidth="120"/>
                         <TableColumn fx:id="colNikKtp" text="NIK KTP" prefWidth="150"/>
                         <TableColumn fx:id="colTglLahir" text="Tanggal Lahir" prefWidth="110"/>
-                        <TableColumn fx:id="colAlamat" text="Alamat" prefWidth="180"/>
-                        <TableColumn fx:id="colUsername" text="Username" prefWidth="120"/>
+                        <TableColumn fx:id="colAlamat" text="Alamat" prefWidth="200"/>
                     </columns>
                 </TableView>
             </VBox>
@@ -60,8 +57,8 @@
                     styleClass="btn-primary" prefWidth="100"/>
             <Button fx:id="btnUbah" text="Ubah" onAction="#handleUbah"
                     styleClass="btn-warning" prefWidth="100"/>
-            <Button fx:id="btnHapus" text="Hapus" onAction="#handleHapus"
-                    styleClass="btn-danger" prefWidth="100"/>
+            <Button fx:id="btnHapus" text="Nonaktifkan" onAction="#handleHapus"
+                    styleClass="btn-danger" prefWidth="110"/>
             <Button text="Reset" onAction="#handleReset"
                     styleClass="btn-neutral" prefWidth="100"/>
         </HBox>
