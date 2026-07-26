@@ -77,18 +77,11 @@ public class LoginKaryawan implements Initializable {
         // Dipakai untuk coba dashboard SuperAdmin & Manager tanpa perlu
         // setting Role di database dulu. Hapus/comment blok ini kalau
         // sudah pakai data Role asli dari tabel Karyawan.
-        if (username.equals("s") && password.equals("a")) {
-            Session.setKaryawan("TEST-SA", "SuperAdmin (Test)", "SuperAdmin");
-            NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
-                    "Login berhasil! Selamat datang, SuperAdmin👤",
-                    () -> MainApp.switchScene("/UIDashboard/UIDashboardKaryawan.fxml"));
-            return;
-        }
         if (username.equals("a") && password.equals("s")) {
             Session.setKaryawan("TEST-MGR", "Manager (Test)", "Manager");
             NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
                     "Login berhasil! Selamat datang, Manager👤",
-                    () -> MainApp.switchScene("/UIDashboard/UIDashboardPenyewa.fxml"));
+                    () -> MainApp.switchScene("/UIDashboard/UIDashboardManager.fxml"));
             return;
         }
         // =================================================================
@@ -144,7 +137,7 @@ public class LoginKaryawan implements Initializable {
             case "admin":
                 return "/UIDashboard/UIDashboardKaryawan.fxml";
             case "manager":
-                return "/UIDashboard/UIDashboardPenyewa.fxml";
+                return "/UIDashboard/UIDashboardManager.fxml";
             default:
                 return null;
         }

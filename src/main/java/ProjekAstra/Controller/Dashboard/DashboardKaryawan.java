@@ -18,6 +18,8 @@ public class DashboardKaryawan {
     @FXML
     private Label lblJudul;
 
+
+
     @FXML
     private Button btnPemilik;
 
@@ -42,8 +44,9 @@ public class DashboardKaryawan {
 
     @FXML
     public void initialize() {
-        handlePenyewa();
+        handlePemilik();
     }
+
 
     @FXML
     private void handlePemilik() {
@@ -95,6 +98,7 @@ public class DashboardKaryawan {
     }
     @FXML
     private void handleTransaksiRefund() {
+        System.out.println("Membuka halaman Transaksi Refund");
         loadContent(
                 "/UITransaksi/Refund.fxml",
                 "Transaksi Refund"
@@ -135,6 +139,7 @@ public class DashboardKaryawan {
                         "-fx-background-radius: 8;" +
                         "-fx-font-weight: bold;" +
                         "-fx-cursor: hand;";
+
 
         btnPemilik.setStyle(
                 btnPemilik == active ? aktif : nonAktif

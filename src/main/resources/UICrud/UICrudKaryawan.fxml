@@ -18,41 +18,29 @@
                 <VBox spacing="10">
                     <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
 
-                    <Label text="🧾 Form Transaksi Booking" styleClass="brand-title">
+                    <Label text="👤 Form Karyawan" styleClass="brand-title">
                         <font><Font name="System Bold" size="15"/></font>
                     </Label>
 
-                    <TextField fx:id="txtIdBooking" promptText="ID Booking" editable="false" styleClass="input-field"/>
+                    <TextField fx:id="txtId" promptText="ID Karyawan" editable="false" styleClass="input-field"/>
+                    <TextField fx:id="txtNama" promptText="Nama Lengkap" styleClass="input-field"/>
+                    <TextField fx:id="txtNoTelp" promptText="No. Telepon" styleClass="input-field"/>
+                    <TextField fx:id="txtUmur" promptText="Umur" styleClass="input-field"/>
+                    <TextArea fx:id="txtAlamat" promptText="Alamat" prefRowCount="2" wrapText="true" styleClass="input-field"/>
 
                     <Separator/>
-                    <Label text="Data Penyewa" styleClass="welcome-text" style="-fx-font-weight: bold;"/>
+                    <Label text="Akun Login" styleClass="welcome-text" style="-fx-font-weight: bold;"/>
 
-                    <TextField fx:id="txtIdPenyewa" promptText="ID Penyewa (ketik lalu Enter)" styleClass="input-field"/>
-                    <TextField fx:id="txtNamaPenyewa" promptText="Nama (otomatis)" editable="false" styleClass="input-field"/>
-                    <TextField fx:id="txtNoTelp" promptText="No. Telp (otomatis)" editable="false" styleClass="input-field"/>
-                    <TextField fx:id="txtUsername" promptText="Username (otomatis)" editable="false" styleClass="input-field"/>
+                    <TextField fx:id="txtUsername" promptText="Username" styleClass="input-field"/>
+                    <PasswordField fx:id="txtPassword" promptText="Password" styleClass="input-field"/>
+                    <DatePicker fx:id="dpTanggalMasuk" promptText="Tanggal Masuk" maxWidth="Infinity" styleClass="input-field"/>
+                    <ComboBox fx:id="cbRole" promptText="Role" maxWidth="Infinity" styleClass="input-field"/>
 
-                    <Separator/>
-                    <Label text="Data Villa" styleClass="welcome-text" style="-fx-font-weight: bold;"/>
+                    <Label text="Status" styleClass="detail-label-kecil"/>
+                    <Label fx:id="lblStatus" text="-" styleClass="detail-harga"/>
 
-                    <ComboBox fx:id="cbVilla" promptText="Pilih Villa" maxWidth="Infinity" styleClass="input-field"/>
-                    <TextField fx:id="txtKategoriVilla" promptText="Kategori Villa (otomatis)" editable="false" styleClass="input-field"/>
-                    <TextField fx:id="txtHargaVilla" promptText="Harga Villa (otomatis)" editable="false" styleClass="input-field"/>
-                    <TextArea fx:id="txtFasilitasVilla" promptText="Fasilitas Villa (otomatis)" editable="false"
-                              prefRowCount="2" wrapText="true" styleClass="input-field"/>
-
-                    <Separator/>
-                    <Label text="Detail Booking" styleClass="welcome-text" style="-fx-font-weight: bold;"/>
-
-                    <DatePicker fx:id="dpCheckin" promptText="Tanggal Check-In" maxWidth="Infinity" styleClass="input-field"/>
-                    <DatePicker fx:id="dpCheckout" promptText="Tanggal Check-Out" maxWidth="Infinity" styleClass="input-field"/>
-                    <TextField fx:id="txtJumlahTamu" promptText="Jumlah Tamu" styleClass="input-field"/>
-                    <TextField fx:id="txtGrandHarga" promptText="Grand Harga (otomatis)" editable="false" styleClass="input-field"/>
-                    <TextArea fx:id="txtCatatan" promptText="Catatan (opsional)" prefRowCount="2" wrapText="true" styleClass="input-field"/>
-                    <ComboBox fx:id="cbStatus" promptText="Status Booking (saat ubah)" maxWidth="Infinity" styleClass="input-field"/>
-
-                    <Region prefHeight="10"/>
-                    <TextField fx:id="txtCari" promptText="🔍 Cari ID / nama / villa..." styleClass="input-field"/>
+                    <Region VBox.vgrow="ALWAYS"/>
+                    <TextField fx:id="txtCari" promptText="🔍 Cari nama / id karyawan..." styleClass="input-field"/>
                 </VBox>
             </ScrollPane>
 
@@ -60,22 +48,17 @@
             <VBox HBox.hgrow="ALWAYS" styleClass="card">
                 <padding><Insets top="15" bottom="15" left="15" right="15"/></padding>
 
-                <TableView fx:id="tableBooking" VBox.vgrow="ALWAYS">
+                <TableView fx:id="tableKaryawan" VBox.vgrow="ALWAYS">
                     <columns>
-                        <TableColumn fx:id="colIdBooking" text="ID Booking" prefWidth="90"/>
-                        <TableColumn fx:id="colIdPenyewa" text="ID Penyewa" prefWidth="90"/>
-                        <TableColumn fx:id="colNama" text="Nama" prefWidth="120"/>
-                        <TableColumn fx:id="colNoTelp" text="No. Telp" prefWidth="110"/>
-                        <TableColumn fx:id="colUsername" text="Username" prefWidth="100"/>
-                        <TableColumn fx:id="colVilla" text="Nama Villa" prefWidth="130"/>
-                        <TableColumn fx:id="colKategori" text="Kategori Villa" prefWidth="110"/>
-                        <TableColumn fx:id="colFasilitas" text="Fasilitas" prefWidth="180"/>
-                        <TableColumn fx:id="colHargaVilla" text="Harga Villa" prefWidth="100"/>
-                        <TableColumn fx:id="colCheckin" text="Check-In" prefWidth="90"/>
-                        <TableColumn fx:id="colCheckout" text="Check-Out" prefWidth="90"/>
-                        <TableColumn fx:id="colTamu" text="Jumlah Tamu" prefWidth="90"/>
-                        <TableColumn fx:id="colGrandHarga" text="Grand Harga" prefWidth="110"/>
-                        <TableColumn fx:id="colStatus" text="Status" prefWidth="130"/>
+                        <TableColumn fx:id="colId" text="ID Karyawan" prefWidth="100"/>
+                        <TableColumn fx:id="colNama" text="Nama" prefWidth="150"/>
+                        <TableColumn fx:id="colNoTelp" text="No. Telp" prefWidth="120"/>
+                        <TableColumn fx:id="colUmur" text="Umur" prefWidth="60"/>
+                        <TableColumn fx:id="colAlamat" text="Alamat" prefWidth="180"/>
+                        <TableColumn fx:id="colUsername" text="Username" prefWidth="110"/>
+                        <TableColumn fx:id="colTglMasuk" text="Tgl Masuk" prefWidth="100"/>
+                        <TableColumn fx:id="colRole" text="Role" prefWidth="90"/>
+                        <TableColumn fx:id="colStatus" text="Status" prefWidth="90"/>
                     </columns>
                 </TableView>
             </VBox>
@@ -90,8 +73,8 @@
                     styleClass="btn-primary" prefWidth="100"/>
             <Button fx:id="btnUbah" text="Ubah" onAction="#handleUbah"
                     styleClass="btn-warning" prefWidth="100"/>
-            <Button fx:id="btnHapus" text="Batalkan" onAction="#handleHapus"
-                    styleClass="btn-danger" prefWidth="100"/>
+            <Button fx:id="btnHapus" text="Nonaktifkan" onAction="#handleHapus"
+                    styleClass="btn-danger" prefWidth="110"/>
             <Button text="Reset" onAction="#handleReset"
                     styleClass="btn-neutral" prefWidth="100"/>
         </HBox>

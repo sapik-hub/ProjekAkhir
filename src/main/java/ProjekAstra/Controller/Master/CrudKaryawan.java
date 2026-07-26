@@ -22,9 +22,12 @@ import java.util.ResourceBundle;
 public class CrudKaryawan implements Initializable {
 
     // ===== FORM =====
-    @FXML private TextField txtId, txtNama, txtNoTelp, txtUmur, txtAlamat, txtUsername, txtCari;
+    @FXML private TextField txtId, txtNama, txtNoTelp, txtUmur, txtCari;
+    @FXML private TextArea txtAlamat;
     @FXML private PasswordField txtPassword;
+    @FXML private TextField txtUsername;
     @FXML private DatePicker dpTanggalMasuk;
+    @FXML private ComboBox<String> cbRole;
     @FXML private Label lblStatus;
     @FXML private Button btnSimpan, btnUbah, btnHapus;
 
@@ -41,6 +44,8 @@ public class CrudKaryawan implements Initializable {
     // ===========================================================
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        cbRole.setItems(FXCollections.observableArrayList("Admin", "Manager"));
+
         setupTable();
         loadTable();
         setClose();
@@ -122,8 +127,7 @@ public class CrudKaryawan implements Initializable {
 
         Koneksi k = new Koneksi();
         try {
-            // Role otomatis 'Admin' (default parameter di SP), Status otomatis 'Aktif'
-            CallableStatement cs = k.conn.prepareCall("{call sp_InsertKaryawan(?, ?, ?, ?, ?, ?, ?)}");
+            CallableStatement cs = k.conn.prepareCall("{call sp_InsertKaryawan(?, ?, ?, ?, ?, ?, ?, ?)}");
             cs.setString(1, txtNama.getText().trim());
             cs.setString(2, txtNoTelp.getText().trim());
             cs.setString(3, txtAlamat.getText().trim());
@@ -131,6 +135,7 @@ public class CrudKaryawan implements Initializable {
             cs.setString(5, txtUsername.getText().trim());
             cs.setString(6, txtPassword.getText().trim());
             cs.setDate(7, Date.valueOf(dpTanggalMasuk.getValue()));
+            cs.setString(8, cbRole.getValue());
             cs.execute();
 
             NotifUtil.show(txtNama, NotifUtil.Type.SUCCESS, "Data karyawan berhasil ditambahkan!",
@@ -155,14 +160,21 @@ public class CrudKaryawan implements Initializable {
         }
         if (!validasiUpdate()) return;
 
+        ConfirmUtil.show(txtNama,
+                "Simpan perubahan data karyawan " + txtNama.getText() + "?",
+                this::prosesUbah);
+    }
+
+    private void prosesUbah() {
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_UpdateKaryawan(?, ?, ?, ?, ?)}");
+            CallableStatement cs = k.conn.prepareCall("{call sp_UpdateKaryawan(?, ?, ?, ?, ?, ?)}");
             cs.setString(1, txtId.getText());
             cs.setString(2, txtNama.getText().trim());
             cs.setString(3, txtNoTelp.getText().trim());
             cs.setString(4, txtAlamat.getText().trim());
             cs.setInt(5, Integer.parseInt(txtUmur.getText().trim()));
+            cs.setString(6, cbRole.getValue());
             cs.execute();
 
             NotifUtil.show(txtNama, NotifUtil.Type.SUCCESS, "Data karyawan berhasil diubah!",
@@ -225,6 +237,7 @@ public class CrudKaryawan implements Initializable {
         dpTanggalMasuk.setValue(k.getTanggalMasuk());
         txtUsername.setText(k.getUsername());
         txtPassword.clear();
+        cbRole.setValue(k.getRole());
         lblStatus.setText(k.getStatus());
 
         txtUsername.setDisable(true);
@@ -245,6 +258,7 @@ public class CrudKaryawan implements Initializable {
         txtUsername.clear();
         txtPassword.clear();
         dpTanggalMasuk.setValue(null);
+        cbRole.setValue(null);
         lblStatus.setText("-");
 
         txtUsername.setDisable(false);
@@ -267,7 +281,8 @@ public class CrudKaryawan implements Initializable {
         if (txtNama.getText().trim().isEmpty() || txtNoTelp.getText().trim().isEmpty() ||
                 txtUmur.getText().trim().isEmpty() || txtAlamat.getText().trim().isEmpty() ||
                 dpTanggalMasuk.getValue() == null ||
-                txtUsername.getText().trim().isEmpty() || txtPassword.getText().trim().isEmpty()) {
+                txtUsername.getText().trim().isEmpty() || txtPassword.getText().trim().isEmpty() ||
+                cbRole.getValue() == null) {
             notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return false;
         }
@@ -276,7 +291,8 @@ public class CrudKaryawan implements Initializable {
 
     private boolean validasiUpdate() {
         if (txtNama.getText().trim().isEmpty() || txtNoTelp.getText().trim().isEmpty() ||
-                txtUmur.getText().trim().isEmpty() || txtAlamat.getText().trim().isEmpty()) {
+                txtUmur.getText().trim().isEmpty() || txtAlamat.getText().trim().isEmpty() ||
+                cbRole.getValue() == null) {
             notif(NotifUtil.Type.WARNING, "Semua field wajib diisi!");
             return false;
         }
@@ -318,6 +334,7 @@ public class CrudKaryawan implements Initializable {
     private void notif(NotifUtil.Type type, String msg) {
         NotifUtil.show(txtNama, type, msg);
     }
+
     public void generateIdKaryawan() {
         Koneksi k = new Koneksi();
         try {
