@@ -20,21 +20,28 @@
 
             <Region prefHeight="25"/>
 
-            <Button fx:id="btnVilla" text="Villa" onAction="#handleVilla"
+            <Button fx:id="btnKaryawan" text="Master Karyawan" onAction="#handleKaryawan"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
-                    styleClass="sidebar-menu-btn-active"/>
+                    style="-fx-background-color: white; -fx-text-fill: #1565C0; -fx-background-radius: 8; -fx-font-weight: bold; -fx-cursor: hand;"/>
 
             <Region prefHeight="8"/>
 
-            <Button fx:id="btnKategori" text="Kategori Villa" onAction="#handleKategori"
-                    prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
-                    styleClass="sidebar-menu-btn"/>
+            <Separator/>
 
             <Region prefHeight="8"/>
 
-            <Button fx:id="btnFasilitas" text="Fasilitas" onAction="#handleFasilitas"
+            <Button fx:id="btnLaporanTransaksi" text="Laporan Transaksi" onAction="#handleLaporanTransaksi"
                     prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
-                    styleClass="sidebar-menu-btn"/>
+                    style="-fx-background-color: transparent; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-cursor: hand;"/>
+
+            <Region prefHeight="8"/>
+
+            <Button fx:id="btnLaporanRefund" text="Laporan Refund" onAction="#handleLaporanRefund"
+                    prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
+                    style="-fx-background-color: transparent; -fx-text-fill: white; -fx-background-radius: 8; -fx-font-weight: bold; -fx-cursor: hand;"/>
+
+            <Region prefHeight="8"/>
+            <Separator/>
         </VBox>
     </left>
 
@@ -42,7 +49,7 @@
         <HBox alignment="CENTER_LEFT" prefHeight="70" styleClass="topbar">
             <padding><Insets left="25" right="25"/></padding>
 
-            <Label fx:id="lblJudul" text="Dashboard" styleClass="page-title">
+            <Label fx:id="lblJudul" text="Dashboard Manager" styleClass="page-title">
                 <font><Font name="System Bold" size="18"/></font>
             </Label>
 
@@ -56,7 +63,7 @@
     <center>
         <StackPane fx:id="contentPane">
             <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
-            <Label text="🏡 Selamat datang di Dashboard VillaStay 🏡" styleClass="welcome-text" style="-fx-font-size: 14px;"/>
+            <Label text="Selamat datang di Dashboard Manager VillaStay" styleClass="welcome-text" style="-fx-font-size: 14px;"/>
         </StackPane>
     </center>
 
