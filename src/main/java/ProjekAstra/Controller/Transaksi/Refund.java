@@ -41,14 +41,15 @@ public class Refund implements Initializable {
 
     private final ObservableList<TransaksiRefund> listRefund = FXCollections.observableArrayList();
 
-    // >>> cache info booking (Id -> Penyewa/Villa/GrandHarga), biar gak query ulang tiap kali combo dipilih
+    // Cache info booking
     private static class BookingInfo {
-        String namaPenyewa, namaVilla;
+        String namaPenyewa, namaVilla, statusBooking;
         BigDecimal grandHarga;
-        BookingInfo(String namaPenyewa, String namaVilla, BigDecimal grandHarga) {
-            this.namaPenyewa = namaPenyewa;
-            this.namaVilla = namaVilla;
-            this.grandHarga = grandHarga;
+        BookingInfo(String namaPenyewa, String namaVilla, BigDecimal grandHarga, String statusBooking) {
+            this.namaPenyewa = namaPenyewa != null ? namaPenyewa : "Tidak Diketahui";
+            this.namaVilla = namaVilla != null ? namaVilla : "Tidak Diketahui";
+            this.grandHarga = grandHarga != null ? grandHarga : BigDecimal.ZERO;
+            this.statusBooking = statusBooking != null ? statusBooking : "Unknown";
         }
     }
     private final Map<String, BookingInfo> mapBookingInfo = new HashMap<>();
@@ -70,20 +71,20 @@ public class Refund implements Initializable {
 
         tableRefund.setOnMouseClicked(e -> {
             TransaksiRefund r = tableRefund.getSelectionModel().getSelectedItem();
-            if (r != null) populateForm(r);
+            if (r != null) {
+                populateForm(r);
+            }
         });
 
         cbBooking.valueProperty().addListener((obs, oldVal, newVal) -> {
             tampilkanInfoBooking(newVal);
-            // Auto-set tanggal pengajuan & refund saat pilih booking
             if (newVal != null) {
                 LocalDate today = LocalDate.now();
                 dpTglPengajuan.setValue(today);
-                dpTglRefund.setValue(today.plusDays(1)); // Refund otomatis H+1
+                dpTglRefund.setValue(today.plusDays(1));
             }
         });
 
-        // Auto-set Tanggal Refund = Tanggal Pengajuan + 1 hari
         dpTglPengajuan.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 dpTglRefund.setValue(newVal.plusDays(1));
@@ -109,7 +110,40 @@ public class Refund implements Initializable {
             @Override
             protected void updateItem(BigDecimal harga, boolean empty) {
                 super.updateItem(harga, empty);
-                setText(empty || harga == null ? null : "Rp " + RUPIAH_FORMAT.format(harga));
+                if (empty || harga == null) {
+                    setText(null);
+                } else {
+                    setText("Rp " + RUPIAH_FORMAT.format(harga));
+                }
+            }
+        });
+
+        colStatus.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(status);
+                    switch (status) {
+                        case "Pending":
+                            setStyle("-fx-text-fill: #f59e0b; -fx-font-weight: bold;");
+                            break;
+                        case "Disetujui":
+                            setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold;");
+                            break;
+                        case "Ditolak":
+                            setStyle("-fx-text-fill: #ef4444; -fx-font-weight: bold;");
+                            break;
+                        case "Selesai":
+                            setStyle("-fx-text-fill: #3b82f6; -fx-font-weight: bold;");
+                            break;
+                        default:
+                            setStyle("");
+                    }
+                }
             }
         });
     }
@@ -118,10 +152,10 @@ public class Refund implements Initializable {
         cbStatus.setItems(FXCollections.observableArrayList(
                 "Pending", "Disetujui", "Ditolak", "Selesai"
         ));
-        cbStatus.setDisable(true); // Default disable
+        cbStatus.setDisable(true);
     }
 
-    // >>> ambil semua booking, filter yang eligible buat direfund (sesuai fnCekBisaRefund), cache semuanya
+    // ✅ FIX: Hanya tampilkan booking yang eligible (tidak termasuk Dibatalkan)
     private void loadComboBooking() {
         cbBooking.getItems().clear();
         mapBookingInfo.clear();
@@ -136,19 +170,55 @@ public class Refund implements Initializable {
                 BigDecimal grandHarga = rs.getBigDecimal("Grand_Harga");
                 String statusBooking = rs.getString("Status_Booking");
 
-                mapBookingInfo.put(idBooking, new BookingInfo(namaPenyewa, namaVilla, grandHarga));
+                mapBookingInfo.put(idBooking, new BookingInfo(namaPenyewa, namaVilla, grandHarga, statusBooking));
 
-                if (statusBooking != null && (statusBooking.equals("Dikonfirmasi") ||
-                        statusBooking.equals("Check In") || statusBooking.equals("Check Out") ||
-                        statusBooking.equals("Selesai"))) {
-                    cbBooking.getItems().add(idBooking + " - " + namaPenyewa);
+                // ✅ HANYA tampilkan booking yang ELIGIBLE untuk refund
+                // Booking Dibatalkan dan Pending TIDAK ditampilkan
+                if (statusBooking != null &&
+                        (statusBooking.equals("Dikonfirmasi") ||
+                                statusBooking.equals("Check In") ||
+                                statusBooking.equals("Check Out") ||
+                                statusBooking.equals("Selesai"))) {
+                    String displayText = idBooking + " - " + (namaPenyewa != null ? namaPenyewa : "Tidak Diketahui");
+                    cbBooking.getItems().add(displayText);
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal memuat data booking: " + e.getMessage());
         } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
         }
+    }
+
+    // ✅ METHOD: Cek apakah booking eligible untuk refund
+    private boolean cekBookingEligibleForRefund(String idBooking) {
+        if (idBooking == null || idBooking.isEmpty()) return false;
+
+        Koneksi k = new Koneksi();
+        try {
+            String sql = "SELECT Status_Booking FROM TransaksiBooking WHERE Id_TrxBooking = ?";
+            PreparedStatement ps = k.conn.prepareStatement(sql);
+            ps.setString(1, idBooking);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                String status = rs.getString("Status_Booking");
+                System.out.println("DEBUG - Cek Status Booking: " + idBooking + " = " + status);
+
+                // ✅ Hanya status ini yang boleh direfund
+                return status != null &&
+                        (status.equals("Dikonfirmasi") ||
+                                status.equals("Check In") ||
+                                status.equals("Check Out") ||
+                                status.equals("Selesai"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
+        }
+        return false;
     }
 
     private void tampilkanInfoBooking(String comboValue) {
@@ -158,7 +228,11 @@ public class Refund implements Initializable {
         if (info != null) {
             txtPenyewa.setText(info.namaPenyewa);
             txtVilla.setText(info.namaVilla);
-            txtGrandHarga.setText(info.grandHarga != null ? "Rp " + RUPIAH_FORMAT.format(info.grandHarga) : "");
+            if (info.grandHarga != null) {
+                txtGrandHarga.setText("Rp " + RUPIAH_FORMAT.format(info.grandHarga));
+            } else {
+                txtGrandHarga.setText("Rp 0");
+            }
         } else {
             txtPenyewa.clear();
             txtVilla.clear();
@@ -170,43 +244,67 @@ public class Refund implements Initializable {
         listRefund.clear();
         Koneksi k = new Koneksi();
         try {
+            System.out.println("=== START LOADING REFUND TABLE ===");
             CallableStatement cs = k.conn.prepareCall("{call sp_GetAllRefund}");
             ResultSet rs = cs.executeQuery();
+
+            int rowCount = 0;
             while (rs.next()) {
-                listRefund.add(new TransaksiRefund(
-                        rs.getString("Id_TrxRefund"),
-                        rs.getString("Id_TrxBooking"),
-                        rs.getString("NamaPenyewa"),
-                        rs.getString("Nama_Villa"),
-                        rs.getString("Nama_Karyawan"),
-                        rs.getString("Alasan_Refund"),
-                        rs.getBigDecimal("Jumlah_Refund"),
-                        rs.getDate("Tanggal_Pengajuan") != null ? rs.getDate("Tanggal_Pengajuan").toLocalDate() : null,
-                        rs.getDate("Tanggal_Refund") != null ? rs.getDate("Tanggal_Refund").toLocalDate() : null,
-                        rs.getString("Deskripsi"),
-                        rs.getString("Status")
-                ));
+                rowCount++;
+                try {
+                    String idRefund = rs.getString("Id_TrxRefund");
+                    String idBooking = rs.getString("Id_TrxBooking");
+                    String namaPenyewa = rs.getString("NamaPenyewa");
+                    String namaVilla = rs.getString("Nama_Villa");
+                    String namaKaryawan = rs.getString("Nama_Karyawan");
+                    String alasan = rs.getString("Alasan_Refund");
+                    BigDecimal jumlah = rs.getBigDecimal("Jumlah_Refund");
+                    LocalDate tglPengajuan = rs.getDate("Tanggal_Pengajuan") != null ?
+                            rs.getDate("Tanggal_Pengajuan").toLocalDate() : null;
+                    LocalDate tglRefund = rs.getDate("Tanggal_Refund") != null ?
+                            rs.getDate("Tanggal_Refund").toLocalDate() : null;
+                    String deskripsi = rs.getString("Deskripsi");
+                    String status = rs.getString("Status");
+
+                    TransaksiRefund refund = new TransaksiRefund(
+                            idRefund, idBooking, namaPenyewa, namaVilla, namaKaryawan,
+                            alasan, jumlah, tglPengajuan, tglRefund, deskripsi, status
+                    );
+                    listRefund.add(refund);
+
+                } catch (Exception e) {
+                    System.err.println("Error pada row " + rowCount + ": " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
+            System.out.println("Total data refund dimuat: " + rowCount);
             tableRefund.setItems(listRefund);
+
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal memuat data refund: " + e.getMessage());
         } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
     private void cariRefund(String keyword) {
-        if (keyword == null || keyword.isEmpty()) {
+        if (keyword == null || keyword.trim().isEmpty()) {
             tableRefund.setItems(listRefund);
             return;
         }
         ObservableList<TransaksiRefund> hasil = FXCollections.observableArrayList();
-        String kw = keyword.toLowerCase();
+        String kw = keyword.trim().toLowerCase();
         for (TransaksiRefund r : listRefund) {
-            if (r.getNamaPenyewa().toLowerCase().contains(kw) ||
-                    r.getNamaVilla().toLowerCase().contains(kw) ||
-                    r.getIdTrxRefund().toLowerCase().contains(kw) ||
-                    r.getIdTrxBooking().toLowerCase().contains(kw)) {
+            if (r == null) continue;
+
+            String idRefund = r.getIdTrxRefund() != null ? r.getIdTrxRefund().toLowerCase() : "";
+            String idBooking = r.getIdTrxBooking() != null ? r.getIdTrxBooking().toLowerCase() : "";
+            String namaPenyewa = r.getNamaPenyewa() != null ? r.getNamaPenyewa().toLowerCase() : "";
+            String namaVilla = r.getNamaVilla() != null ? r.getNamaVilla().toLowerCase() : "";
+
+            if (namaPenyewa.contains(kw) || namaVilla.contains(kw) ||
+                    idRefund.contains(kw) || idBooking.contains(kw)) {
                 hasil.add(r);
             }
         }
@@ -219,8 +317,20 @@ public class Refund implements Initializable {
 
         Koneksi k = new Koneksi();
         try {
+            String idBooking = getIdFromCombo(cbBooking.getValue());
+            if (idBooking == null) {
+                notif(NotifUtil.Type.WARNING, "Booking tidak valid!");
+                return;
+            }
+
+            // ✅ VALIDASI: Cek apakah booking eligible untuk refund
+            if (!cekBookingEligibleForRefund(idBooking)) {
+                notif(NotifUtil.Type.WARNING, "Booking ini tidak bisa direfund! (Status: Dibatalkan atau tidak eligible)");
+                return;
+            }
+
             CallableStatement cs = k.conn.prepareCall("{call sp_InsertRefund(?, ?, ?, ?)}");
-            cs.setString(1, getIdFromCombo(cbBooking.getValue()));
+            cs.setString(1, idBooking);
             cs.setString(2, Session.getIdKaryawan());
             cs.setString(3, txtAlasan.getText().trim());
             cs.setString(4, txtDeskripsi.getText().trim());
@@ -239,17 +349,20 @@ public class Refund implements Initializable {
                         else setClose();
                     });
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal menyimpan: " + e.getMessage());
         } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
     private void selectRefundById(String idTrxRefund) {
+        if (idTrxRefund == null) return;
         for (TransaksiRefund r : listRefund) {
-            if (r.getIdTrxRefund().equals(idTrxRefund)) {
+            if (r != null && idTrxRefund.equals(r.getIdTrxRefund())) {
                 populateForm(r);
                 tableRefund.getSelectionModel().select(r);
+                tableRefund.scrollTo(r);
                 break;
             }
         }
@@ -257,11 +370,11 @@ public class Refund implements Initializable {
 
     @FXML
     private void handleUbah() {
-        if (txtId.getText().isEmpty()) {
+        if (txtId.getText() == null || txtId.getText().isEmpty()) {
             notif(NotifUtil.Type.WARNING, "Pilih data refund yang ingin diubah terlebih dahulu!");
             return;
         }
-        if (txtAlasan.getText().trim().isEmpty()) {
+        if (txtAlasan.getText() == null || txtAlasan.getText().trim().isEmpty()) {
             notif(NotifUtil.Type.WARNING, "Alasan Refund wajib diisi!");
             return;
         }
@@ -274,33 +387,33 @@ public class Refund implements Initializable {
     private void prosesUbah() {
         Koneksi k = new Koneksi();
         try {
-            // Update alasan dan deskripsi
             CallableStatement cs = k.conn.prepareCall("{call sp_UpdateRefund(?, ?, ?)}");
             cs.setString(1, txtId.getText());
             cs.setString(2, txtAlasan.getText().trim());
             cs.setString(3, txtDeskripsi.getText().trim());
             cs.execute();
 
-            // Update status jika ada perubahan
-            if (cbStatus.getValue() != null && !cbStatus.getValue().isEmpty()) {
+            String statusBaru = cbStatus.getValue();
+            if (statusBaru != null && !statusBaru.isEmpty()) {
                 CallableStatement csStatus = k.conn.prepareCall("{call sp_UpdateStatusRefund(?, ?)}");
                 csStatus.setString(1, txtId.getText());
-                csStatus.setString(2, cbStatus.getValue());
+                csStatus.setString(2, statusBaru);
                 csStatus.execute();
             }
 
             NotifUtil.show(txtAlasan, NotifUtil.Type.SUCCESS, "Data refund berhasil diubah!",
                     () -> { setClose(); loadTable(); });
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
         } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
     @FXML
     private void handleHapus() {
-        if (txtId.getText().isEmpty()) {
+        if (txtId.getText() == null || txtId.getText().isEmpty()) {
             notif(NotifUtil.Type.WARNING, "Pilih data refund yang ingin dibatalkan terlebih dahulu!");
             return;
         }
@@ -318,9 +431,10 @@ public class Refund implements Initializable {
                         NotifUtil.show(txtAlasan, NotifUtil.Type.SUCCESS, "Pengajuan refund berhasil dibatalkan!",
                                 () -> { setClose(); loadTable(); });
                     } catch (Exception e) {
+                        e.printStackTrace();
                         notif(NotifUtil.Type.ERROR, "Gagal membatalkan: " + e.getMessage());
                     } finally {
-                        try { k.conn.close(); } catch (Exception ignored) {}
+                        try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
                     }
                 });
     }
@@ -332,7 +446,7 @@ public class Refund implements Initializable {
 
     @FXML
     private void handleCetakRefund() {
-        if (txtId.getText().isEmpty()) {
+        if (txtId.getText() == null || txtId.getText().isEmpty()) {
             notif(NotifUtil.Type.WARNING, "Pilih data refund yang ingin dicetak terlebih dahulu!");
             return;
         }
@@ -346,77 +460,114 @@ public class Refund implements Initializable {
             if (rs.next()) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("=== BUKTI REFUND ===\n\n");
-                sb.append("ID Refund      : ").append(rs.getString("Id_TrxRefund")).append("\n");
-                sb.append("Penyewa        : ").append(rs.getString("NamaPenyewa")).append("\n");
-                sb.append("Villa          : ").append(rs.getString("Nama_Villa")).append("\n");
-                sb.append("Check-in       : ").append(rs.getDate("Tanggal_Checkin")).append("\n");
-                sb.append("Check-out      : ").append(rs.getDate("Tanggal_Checkout")).append("\n");
-                sb.append("Grand Harga    : Rp ").append(RUPIAH_FORMAT.format(rs.getBigDecimal("Grand_Harga"))).append("\n");
-                sb.append("Jumlah Refund  : Rp ").append(RUPIAH_FORMAT.format(rs.getBigDecimal("Jumlah_Refund"))).append("\n");
-                sb.append("Alasan         : ").append(rs.getString("Alasan_Refund")).append("\n");
-                sb.append("Deskripsi      : ").append(rs.getString("Deskripsi") == null ? "-" : rs.getString("Deskripsi")).append("\n");
-                sb.append("Tgl Pengajuan  : ").append(rs.getDate("Tanggal_Pengajuan")).append("\n");
-                sb.append("Tgl Refund     : ").append(rs.getDate("Tanggal_Refund") == null ? "-" : rs.getDate("Tanggal_Refund")).append("\n");
-                sb.append("Status         : ").append(rs.getString("Status")).append("\n");
+                sb.append("ID Refund      : ").append(rs.getString("Id_TrxRefund") != null ? rs.getString("Id_TrxRefund") : "-").append("\n");
+                sb.append("Penyewa        : ").append(rs.getString("NamaPenyewa") != null ? rs.getString("NamaPenyewa") : "-").append("\n");
+                sb.append("Villa          : ").append(rs.getString("Nama_Villa") != null ? rs.getString("Nama_Villa") : "-").append("\n");
+                sb.append("Check-in       : ").append(rs.getDate("Tanggal_Checkin") != null ? rs.getDate("Tanggal_Checkin") : "-").append("\n");
+                sb.append("Check-out      : ").append(rs.getDate("Tanggal_Checkout") != null ? rs.getDate("Tanggal_Checkout") : "-").append("\n");
+
+                BigDecimal grandHarga = rs.getBigDecimal("Grand_Harga");
+                sb.append("Grand Harga    : Rp ").append(grandHarga != null ? RUPIAH_FORMAT.format(grandHarga) : "0").append("\n");
+
+                BigDecimal jumlahRefund = rs.getBigDecimal("Jumlah_Refund");
+                sb.append("Jumlah Refund  : Rp ").append(jumlahRefund != null ? RUPIAH_FORMAT.format(jumlahRefund) : "0").append("\n");
+                sb.append("Alasan         : ").append(rs.getString("Alasan_Refund") != null ? rs.getString("Alasan_Refund") : "-").append("\n");
+                sb.append("Deskripsi      : ").append(rs.getString("Deskripsi") != null ? rs.getString("Deskripsi") : "-").append("\n");
+                sb.append("Tgl Pengajuan  : ").append(rs.getDate("Tanggal_Pengajuan") != null ? rs.getDate("Tanggal_Pengajuan") : "-").append("\n");
+                sb.append("Tgl Refund     : ").append(rs.getDate("Tanggal_Refund") != null ? rs.getDate("Tanggal_Refund") : "-").append("\n");
+                sb.append("Status         : ").append(rs.getString("Status") != null ? rs.getString("Status") : "-").append("\n");
 
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Bukti Refund");
-                alert.setHeaderText("Bukti Refund - " + rs.getString("Id_TrxRefund"));
+                alert.setHeaderText("Bukti Refund - " + (rs.getString("Id_TrxRefund") != null ? rs.getString("Id_TrxRefund") : ""));
                 TextArea area = new TextArea(sb.toString());
                 area.setEditable(false);
                 area.setWrapText(true);
                 area.setPrefSize(400, 350);
                 alert.getDialogPane().setContent(area);
                 alert.showAndWait();
+            } else {
+                notif(NotifUtil.Type.WARNING, "Data refund tidak ditemukan!");
             }
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal mencetak bukti refund: " + e.getMessage());
         } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
     private void populateForm(TransaksiRefund r) {
-        txtId.setText(r.getIdTrxRefund());
-        selectComboById(cbBooking, r.getIdTrxBooking(), r.getNamaPenyewa());
+        if (r == null) {
+            notif(NotifUtil.Type.WARNING, "Data refund tidak ditemukan!");
+            return;
+        }
 
-        txtPenyewa.setText(r.getNamaPenyewa());
-        txtVilla.setText(r.getNamaVilla());
-        txtGrandHarga.setText(r.getJumlahRefund() != null ? "Rp " + RUPIAH_FORMAT.format(r.getJumlahRefund()) : "");
+        try {
+            txtId.setText(r.getIdTrxRefund() != null ? r.getIdTrxRefund() : "");
 
-        txtDiprosesOleh.setText(r.getNamaKaryawan());
+            String idBooking = r.getIdTrxBooking();
+            if (idBooking != null) {
+                // ✅ CEK: Jika booking sudah dibatalkan, tampilkan peringatan
+                if (!cekBookingEligibleForRefund(idBooking)) {
+                    System.out.println("WARNING: Booking " + idBooking + " sudah tidak eligible untuk refund");
+                }
+                selectComboById(cbBooking, idBooking, r.getNamaPenyewa());
+            } else {
+                cbBooking.setValue(null);
+            }
 
-        txtAlasan.setText(r.getAlasanRefund());
-        txtDeskripsi.setText(r.getDeskripsi());
+            txtPenyewa.setText(r.getNamaPenyewa() != null ? r.getNamaPenyewa() : "");
+            txtVilla.setText(r.getNamaVilla() != null ? r.getNamaVilla() : "");
 
-        // Enable status combo saat mode ubah
-        cbStatus.setDisable(false);
-        cbStatus.setValue(r.getStatus());
+            if (r.getJumlahRefund() != null) {
+                txtGrandHarga.setText("Rp " + RUPIAH_FORMAT.format(r.getJumlahRefund()));
+            } else {
+                txtGrandHarga.setText("Rp 0");
+            }
 
-        // Set tanggal
-        dpTglPengajuan.setValue(r.getTanggalPengajuan());
-        dpTglRefund.setValue(r.getTanggalRefund());
+            txtDiprosesOleh.setText(r.getNamaKaryawan() != null ? r.getNamaKaryawan() : "");
+            txtAlasan.setText(r.getAlasanRefund() != null ? r.getAlasanRefund() : "");
+            txtDeskripsi.setText(r.getDeskripsi() != null ? r.getDeskripsi() : "");
 
-        cbBooking.setDisable(true); // booking gak boleh diganti pas edit
+            cbStatus.setDisable(false);
+            cbStatus.setValue(r.getStatus() != null ? r.getStatus() : "Pending");
 
-        btnSimpan.setDisable(true);
-        btnUbah.setDisable(false);
-        btnHapus.setDisable(false);
+            dpTglPengajuan.setValue(r.getTanggalPengajuan());
+            dpTglRefund.setValue(r.getTanggalRefund());
+
+            cbBooking.setDisable(true);
+
+            btnSimpan.setDisable(true);
+            btnUbah.setDisable(false);
+            btnHapus.setDisable(false);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            notif(NotifUtil.Type.ERROR, "Gagal memuat data refund: " + e.getMessage());
+        }
     }
 
     private void selectComboById(ComboBox<String> combo, String id, String namaPenyewa) {
+        if (combo == null || id == null) return;
+
+        String target = id + " - " + (namaPenyewa != null ? namaPenyewa : "Tidak Diketahui");
+
         for (String item : combo.getItems()) {
-            if (item.startsWith(id + " - ")) {
+            if (item != null && item.startsWith(id + " - ")) {
                 combo.setValue(item);
                 return;
             }
         }
-        combo.setValue(id + " - " + namaPenyewa);
+
+        combo.getItems().add(target);
+        combo.setValue(target);
     }
 
     private String getIdFromCombo(String comboValue) {
-        if (comboValue == null) return null;
-        return comboValue.split(" - ")[0];
+        if (comboValue == null || comboValue.isEmpty()) return null;
+        String[] parts = comboValue.split(" - ");
+        return parts.length > 0 ? parts[0] : null;
     }
 
     private void setClose() {
@@ -429,18 +580,15 @@ public class Refund implements Initializable {
         cbBooking.setValue(null);
         cbBooking.setDisable(false);
 
-        // Status hanya enable saat mode ubah
         cbStatus.setDisable(true);
         cbStatus.setValue(null);
 
-        // Set tanggal default
         LocalDate today = LocalDate.now();
         dpTglPengajuan.setValue(today);
         dpTglRefund.setValue(today.plusDays(1));
         dpTglPengajuan.setDisable(false);
         dpTglRefund.setDisable(false);
 
-        // Auto-fill Diproses Oleh
         String namaAktif = Session.getNamaKaryawan();
         txtDiprosesOleh.setText(namaAktif != null && !namaAktif.isEmpty() ? namaAktif : "⚠ Sesi tidak ditemukan");
 
@@ -466,23 +614,32 @@ public class Refund implements Initializable {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
     private boolean validasiInsert() {
-        if (cbBooking.getValue() == null || txtAlasan.getText().trim().isEmpty()) {
-            notif(NotifUtil.Type.WARNING, "Booking dan Alasan Refund wajib diisi!");
+        if (cbBooking.getValue() == null || cbBooking.getValue().isEmpty()) {
+            notif(NotifUtil.Type.WARNING, "Silakan pilih booking terlebih dahulu!");
             return false;
         }
+
+        if (txtAlasan.getText() == null || txtAlasan.getText().trim().isEmpty()) {
+            notif(NotifUtil.Type.WARNING, "Alasan Refund wajib diisi!");
+            return false;
+        }
+
         if (dpTglPengajuan.getValue() == null) {
             notif(NotifUtil.Type.WARNING, "Tanggal Pengajuan wajib diisi!");
             return false;
         }
-        if (Session.getIdKaryawan() == null || Session.getIdKaryawan().isEmpty()) {
+
+        String idKaryawan = Session.getIdKaryawan();
+        if (idKaryawan == null || idKaryawan.isEmpty()) {
             notif(NotifUtil.Type.ERROR, "Sesi karyawan tidak ditemukan! Silakan logout dan login ulang.");
             return false;
         }
+
         return true;
     }
 

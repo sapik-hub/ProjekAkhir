@@ -104,25 +104,6 @@ public class LoginKaryawan implements Initializable {
             return;
         }
 
-        // ================= AKUN TEST CEPAT (SEMENTARA) =================
-        // ================= 1. AKUN TEST MANAGER =================
-        if (username.equals("a") && password.equals("s")) {
-            Session.setKaryawan("TEST-MGR", "Manager (Test)", "Manager");
-            NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
-                    "Login berhasil! Selamat datang, Manager 👤",
-                    () -> MainApp.switchScene("/UIDashboard/UIDashboardManager.fxml"));
-            return;
-        }
-
-        // ================= 2. AKUN TEST ADMIN =================
-        if (username.equals("s") && password.equals("a")) {
-            Session.setKaryawan("TEST-ADMIN", "Admin (Test)", "Admin");
-            NotifUtil.show(loginUsername, NotifUtil.Type.SUCCESS,
-                    "Login berhasil! Selamat datang, Admin 👤",
-                    () -> MainApp.switchScene("/UIDashboard/UIDashboardKaryawan.fxml"));
-            return;
-        }
-        // =================================================================
 
         Koneksi k = new Koneksi();
 

@@ -2,6 +2,7 @@ package ProjekAstra.Controller.Transaksi;
 
 import ProjekAstra.Koneksi.Koneksi;
 import ProjekAstra.Model.TransaksiBooking;
+import ProjekAstra.Model.VillaInfo;
 import ProjekAstra.Util.ConfirmUtil;
 import ProjekAstra.Util.NotifUtil;
 import ProjekAstra.Util.Session;
@@ -12,11 +13,18 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.CallableStatement;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Types;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 public class Booking implements Initializable {
@@ -25,18 +33,29 @@ public class Booking implements Initializable {
     @FXML private TextArea txtCatatan;
     @FXML private ComboBox<String> cbPenyewa, cbVilla, cbStatus;
     @FXML private DatePicker dpCheckin, dpCheckout;
-    @FXML private Button btnSimpan, btnUbah, btnHapus;  // <-- GANTI: btnKonfirmasi -> btnUbah
+    @FXML private Button btnSimpan, btnUbah, btnHapus;
 
     @FXML private TableView<TransaksiBooking> tableBooking;
     @FXML private TableColumn<TransaksiBooking, String> colId, colPenyewa, colVilla, colStatus;
     @FXML private TableColumn<TransaksiBooking, LocalDate> colCheckin, colCheckout;
     @FXML private TableColumn<TransaksiBooking, Integer> colTamu;
-    @FXML private TableColumn<TransaksiBooking, Double> colHarga;
+    @FXML private TableColumn<TransaksiBooking, BigDecimal> colHarga;
 
     private final ObservableList<TransaksiBooking> listBooking = FXCollections.observableArrayList();
-    private double hargaVillaTerpilih = 0;
 
-    // Urutan sesuai CHECK constraint di tabel TransaksiBooking - jangan diubah teksnya!
+    // Cache info villa
+    private final Map<String, VillaInfo> mapVillaInfo = new HashMap<>();
+    private VillaInfo villaTerpilih = null;
+
+    // Formatter untuk Rupiah
+    private static final DecimalFormat RUPIAH_FORMAT;
+    static {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(new Locale("id", "ID"));
+        symbols.setGroupingSeparator('.');
+        symbols.setCurrencySymbol("Rp ");
+        RUPIAH_FORMAT = new DecimalFormat("Rp #,##0", symbols);
+    }
+
     private static final String[] DAFTAR_STATUS = {
             "Pending", "Dikonfirmasi", "Check In", "Check Out", "Selesai", "Dibatalkan"
     };
@@ -45,7 +64,7 @@ public class Booking implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         setupTable();
         loadComboPenyewa();
-        loadComboVilla();
+        loadComboVillaWithHarga();
         setupStatusCombo();
         loadTable();
         setClose();
@@ -57,8 +76,9 @@ public class Booking implements Initializable {
 
         dpCheckin.valueProperty().addListener((obs, oldVal, newVal) -> hitungGrandHarga());
         dpCheckout.valueProperty().addListener((obs, oldVal, newVal) -> hitungGrandHarga());
+
         cbVilla.valueProperty().addListener((obs, oldVal, newVal) -> {
-            hargaVillaTerpilih = getHargaVillaTerpilih(newVal);
+            villaTerpilih = getVillaInfo(newVal);
             hitungGrandHarga();
         });
 
@@ -75,7 +95,18 @@ public class Booking implements Initializable {
         colHarga.setCellValueFactory(new PropertyValueFactory<>("grandHarga"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("statusBooking"));
 
-        // Badge warna biar admin gampang liat mana yang masih Pending
+        colHarga.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(BigDecimal harga, boolean empty) {
+                super.updateItem(harga, empty);
+                if (empty || harga == null) {
+                    setText(null);
+                } else {
+                    setText(RUPIAH_FORMAT.format(harga));
+                }
+            }
+        });
+
         colStatus.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String status, boolean empty) {
@@ -105,7 +136,7 @@ public class Booking implements Initializable {
 
     private void setupStatusCombo() {
         cbStatus.setItems(FXCollections.observableArrayList(DAFTAR_STATUS));
-        cbStatus.setDisable(true); // Default disable, hanya aktif saat mode ubah
+        cbStatus.setDisable(true);
     }
 
     private void loadComboPenyewa() {
@@ -120,81 +151,140 @@ public class Booking implements Initializable {
         } catch (Exception e) {
             notif(NotifUtil.Type.ERROR, "Gagal memuat data penyewa: " + e.getMessage());
         } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
-    // Pakai daftar SEMUA villa (bukan cuma yang Tersedia), supaya villa yang lagi
-    // dibooking tetap muncul saat mode edit. Bentrok tanggal tetap dicegah di level SP.
-    private void loadComboVilla() {
+    private void loadComboVillaWithHarga() {
         cbVilla.getItems().clear();
+        mapVillaInfo.clear();
         Koneksi k = new Koneksi();
         try {
             CallableStatement cs = k.conn.prepareCall("{call sp_GetAllVilla}");
             ResultSet rs = cs.executeQuery();
             while (rs.next()) {
-                cbVilla.getItems().add(rs.getString("Id_Villa") + " - " + rs.getString("Nama_Villa"));
+                String idVilla = rs.getString("Id_Villa");
+                String namaVilla = rs.getString("Nama_Villa");
+                BigDecimal hargaWeekday = rs.getBigDecimal("HargaWeekday");
+                BigDecimal hargaWeekend = rs.getBigDecimal("HargaWeekend");
+
+                if (hargaWeekday == null) hargaWeekday = BigDecimal.ZERO;
+                if (hargaWeekend == null) hargaWeekend = BigDecimal.ZERO;
+
+                mapVillaInfo.put(idVilla, new VillaInfo(idVilla, namaVilla, hargaWeekday, hargaWeekend));
+                cbVilla.getItems().add(idVilla + " - " + namaVilla);
             }
         } catch (Exception e) {
             notif(NotifUtil.Type.ERROR, "Gagal memuat data villa: " + e.getMessage());
         } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
-    private double getHargaVillaTerpilih(String comboValue) {
-        if (comboValue == null) return 0;
+    private VillaInfo getVillaInfo(String comboValue) {
+        if (comboValue == null) return null;
         String idVilla = comboValue.split(" - ")[0];
-        Koneksi k = new Koneksi();
-        double harga = 0;
-        try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_GetHargaVilla(?)}");
-            cs.setString(1, idVilla);
-            ResultSet rs = cs.executeQuery();
-            if (rs.next()) harga = rs.getDouble("Harga");
-        } catch (Exception e) {
-            notif(NotifUtil.Type.ERROR, "Gagal mengambil harga villa: " + e.getMessage());
-        } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
-        }
-        return harga;
+        return mapVillaInfo.get(idVilla);
     }
 
     private void hitungGrandHarga() {
         LocalDate checkin = dpCheckin.getValue();
         LocalDate checkout = dpCheckout.getValue();
-        if (checkin != null && checkout != null && checkout.isAfter(checkin) && hargaVillaTerpilih > 0) {
-            long malam = java.time.temporal.ChronoUnit.DAYS.between(checkin, checkout);
-            txtGrandHarga.setText(String.valueOf(hargaVillaTerpilih * malam));
-        } else {
+
+        if (checkin == null || checkout == null || !checkout.isAfter(checkin)) {
             txtGrandHarga.clear();
+            return;
         }
+
+        if (villaTerpilih == null) {
+            txtGrandHarga.clear();
+            return;
+        }
+
+        BigDecimal hargaWeekday = villaTerpilih.getHargaWeekday();
+        BigDecimal hargaWeekend = villaTerpilih.getHargaWeekend();
+
+        if (hargaWeekday == null || hargaWeekend == null) {
+            txtGrandHarga.clear();
+            return;
+        }
+
+        if (hargaWeekday.compareTo(BigDecimal.ZERO) <= 0) {
+            txtGrandHarga.clear();
+            return;
+        }
+
+        BigDecimal total = BigDecimal.ZERO;
+        LocalDate current = checkin;
+
+        while (current.isBefore(checkout)) {
+            java.time.DayOfWeek day = current.getDayOfWeek();
+            if (day == java.time.DayOfWeek.SATURDAY || day == java.time.DayOfWeek.SUNDAY) {
+                total = total.add(hargaWeekend);
+            } else {
+                total = total.add(hargaWeekday);
+            }
+            current = current.plusDays(1);
+        }
+
+        txtGrandHarga.setText(RUPIAH_FORMAT.format(total));
     }
 
     private void loadTable() {
         listBooking.clear();
         Koneksi k = new Koneksi();
         try {
-            CallableStatement cs = k.conn.prepareCall("{call sp_GetAllBooking}");
-            ResultSet rs = cs.executeQuery();
+            System.out.println("=== LOAD BOOKING TABLE START ===");
+
+            String sql = "SELECT " +
+                    "    b.Id_TrxBooking, " +
+                    "    ISNULL(p.Nama, 'Tidak Diketahui') AS NamaPenyewa, " +
+                    "    ISNULL(v.Nama_Villa, 'Tidak Diketahui') AS Nama_Villa, " +
+                    "    b.Tanggal_Checkin, " +
+                    "    b.Tanggal_Checkout, " +
+                    "    b.Jumlah_Tamu, " +
+                    "    ISNULL(b.Grand_Harga, 0) AS Grand_Harga, " +
+                    "    b.Status_Booking, " +
+                    "    b.Tanggal_Booking " +
+                    "FROM TransaksiBooking b " +
+                    "LEFT JOIN Penyewa p ON b.Id_Penyewa = p.Id_Penyewa " +
+                    "LEFT JOIN Villa v ON b.Id_Villa = v.Id_Villa " +
+                    "ORDER BY b.Id_TrxBooking ASC";
+
+            PreparedStatement ps = k.conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            int rowCount = 0;
             while (rs.next()) {
-                listBooking.add(new TransaksiBooking(
+                rowCount++;
+                BigDecimal grandHarga = rs.getBigDecimal("Grand_Harga");
+                if (grandHarga == null) grandHarga = BigDecimal.ZERO;
+
+                TransaksiBooking booking = new TransaksiBooking(
                         rs.getString("Id_TrxBooking"),
                         rs.getString("NamaPenyewa"),
                         rs.getString("Nama_Villa"),
-                        rs.getDate("Tanggal_Checkin").toLocalDate(),
-                        rs.getDate("Tanggal_Checkout").toLocalDate(),
+                        rs.getDate("Tanggal_Checkin") != null ? rs.getDate("Tanggal_Checkin").toLocalDate() : null,
+                        rs.getDate("Tanggal_Checkout") != null ? rs.getDate("Tanggal_Checkout").toLocalDate() : null,
                         rs.getInt("Jumlah_Tamu"),
-                        rs.getDouble("Grand_Harga"),
+                        grandHarga,
                         rs.getString("Status_Booking"),
-                        rs.getDate("Tanggal_Booking").toLocalDate()
-                ));
+                        rs.getDate("Tanggal_Booking") != null ? rs.getDate("Tanggal_Booking").toLocalDate() : null
+                );
+                listBooking.add(booking);
+
+                System.out.println("DEBUG - Row " + rowCount + ": " + rs.getString("Id_TrxBooking"));
             }
+
+            System.out.println("Total data booking dimuat: " + rowCount);
             tableBooking.setItems(listBooking);
+
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal memuat data booking: " + e.getMessage());
         } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
+            System.out.println("=== LOAD BOOKING TABLE END ===");
         }
     }
 
@@ -203,19 +293,26 @@ public class Booking implements Initializable {
             tableBooking.setItems(listBooking);
             return;
         }
+
         ObservableList<TransaksiBooking> hasil = FXCollections.observableArrayList();
+        String kw = keyword.toLowerCase();
+
         for (TransaksiBooking b : listBooking) {
-            if (b.getNamaPenyewa().toLowerCase().contains(keyword.toLowerCase()) ||
-                    b.getIdTrsBooking().toLowerCase().contains(keyword.toLowerCase())) {
+            if (b == null) continue;
+
+            String id = b.getIdTrsBooking() != null ? b.getIdTrsBooking().toLowerCase() : "";
+            String penyewa = b.getNamaPenyewa() != null ? b.getNamaPenyewa().toLowerCase() : "";
+            String villa = b.getNamaVilla() != null ? b.getNamaVilla().toLowerCase() : "";
+            String status = b.getStatusBooking() != null ? b.getStatusBooking().toLowerCase() : "";
+
+            if (id.contains(kw) || penyewa.contains(kw) || villa.contains(kw) || status.contains(kw)) {
                 hasil.add(b);
             }
         }
+
         tableBooking.setItems(hasil);
     }
 
-    // ===========================================================
-    // HANDLE SIMPAN (BOOKING BARU)
-    // ===========================================================
     @FXML
     private void handleSimpan() {
         if (!validasi()) return;
@@ -229,22 +326,31 @@ public class Booking implements Initializable {
             cs.setDate(4, java.sql.Date.valueOf(dpCheckout.getValue()));
             cs.setInt(5, Integer.parseInt(txtJumlahTamu.getText().trim()));
             cs.setString(6, txtCatatan.getText().trim());
-            cs.execute();
 
-            NotifUtil.show(txtJumlahTamu, NotifUtil.Type.SUCCESS, "Booking berhasil dibuat!",
-                    () -> { setClose(); loadTable(); });
+            ResultSet rs = cs.executeQuery();
+            if (rs.next()) {
+                BigDecimal grandHarga = rs.getBigDecimal("Grand_Harga");
+                String idBooking = rs.getString("Id_TrxBooking");
+
+                if (grandHarga == null) grandHarga = BigDecimal.ZERO;
+
+                notif(NotifUtil.Type.SUCCESS,
+                        "Booking berhasil dibuat!\nID: " + idBooking +
+                                "\nTotal: " + RUPIAH_FORMAT.format(grandHarga));
+
+                setClose();
+                loadTable();
+            }
         } catch (NumberFormatException e) {
             notif(NotifUtil.Type.WARNING, "Jumlah tamu harus berupa angka!");
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal menyimpan: " + e.getMessage());
         } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
-    // ===========================================================
-    // HANDLE UBAH (UPDATE BOOKING + STATUS)
-    // ===========================================================
     @FXML
     private void handleUbah() {
         if (txtId.getText().isEmpty()) {
@@ -265,7 +371,7 @@ public class Booking implements Initializable {
     private void prosesUbah() {
         Koneksi k = new Koneksi();
         try {
-            // 1. Update data booking (tanggal, villa, jumlah tamu, catatan)
+            // 1. Update data booking
             CallableStatement cs = k.conn.prepareCall("{call sp_UpdateBooking(?, ?, ?, ?, ?, ?)}");
             cs.setString(1, txtId.getText());
             cs.setString(2, getIdFromCombo(cbVilla.getValue()));
@@ -275,12 +381,15 @@ public class Booking implements Initializable {
             cs.setString(6, txtCatatan.getText().trim());
             cs.execute();
 
-            // 2. Update status - Id_Karyawan diambil dari sesi staff yang lagi login
+            // 2. Update status
             CallableStatement csStatus = k.conn.prepareCall("{call sp_UpdateStatusBooking(?, ?, ?)}");
             csStatus.setString(1, txtId.getText());
             String idKaryawan = Session.getIdKaryawan();
-            if (idKaryawan == null) csStatus.setNull(2, Types.VARCHAR);
-            else csStatus.setString(2, idKaryawan);
+            if (idKaryawan == null || idKaryawan.isEmpty()) {
+                csStatus.setNull(2, Types.VARCHAR);
+            } else {
+                csStatus.setString(2, idKaryawan);
+            }
             csStatus.setString(3, cbStatus.getValue());
             csStatus.execute();
 
@@ -289,14 +398,15 @@ public class Booking implements Initializable {
         } catch (NumberFormatException e) {
             notif(NotifUtil.Type.WARNING, "Jumlah tamu harus berupa angka!");
         } catch (Exception e) {
+            e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal mengubah: " + e.getMessage());
         } finally {
-            try { k.conn.close(); } catch (Exception ignored) {}
+            try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
         }
     }
 
     // ===========================================================
-    // HANDLE HAPUS (BATAL BOOKING)
+    // ✅ PERBAIKAN: handleHapus - csStatus diganti dengan cs
     // ===========================================================
     @FXML
     private void handleHapus() {
@@ -310,20 +420,28 @@ public class Booking implements Initializable {
                 () -> {
                     Koneksi k = new Koneksi();
                     try {
+                        // ✅ PERBAIKAN: Gunakan satu CallableStatement, nama variabel cs
                         CallableStatement cs = k.conn.prepareCall("{call sp_UpdateStatusBooking(?, ?, ?)}");
                         cs.setString(1, txtId.getText());
+
                         String idKaryawan = Session.getIdKaryawan();
-                        if (idKaryawan == null) cs.setNull(2, Types.VARCHAR);
-                        else cs.setString(2, idKaryawan);
+                        if (idKaryawan == null || idKaryawan.isEmpty()) {
+                            cs.setNull(2, Types.VARCHAR);
+                        } else {
+                            cs.setString(2, idKaryawan);
+                        }
+
                         cs.setString(3, "Dibatalkan");
                         cs.execute();
 
                         NotifUtil.show(txtJumlahTamu, NotifUtil.Type.SUCCESS, "Booking berhasil dibatalkan!",
                                 () -> { setClose(); loadTable(); });
+
                     } catch (Exception e) {
+                        e.printStackTrace();
                         notif(NotifUtil.Type.ERROR, "Gagal membatalkan: " + e.getMessage());
                     } finally {
-                        try { k.conn.close(); } catch (Exception ignored) {}
+                        try { if (k.conn != null) k.conn.close(); } catch (Exception ignored) {}
                     }
                 });
     }
@@ -342,20 +460,25 @@ public class Booking implements Initializable {
         notif(NotifUtil.Type.SUCCESS, "Fitur cetak struk siap dihubungkan ke sp_CetakStrukBooking.");
     }
 
-    // ===========================================================
-    // FORM HELPERS
-    // ===========================================================
     private void populateForm(TransaksiBooking b) {
         txtId.setText(b.getIdTrsBooking());
         selectComboByName(cbPenyewa, b.getNamaPenyewa());
         selectComboByName(cbVilla, b.getNamaVilla());
+
+        villaTerpilih = getVillaInfo(cbVilla.getValue());
+
         dpCheckin.setValue(b.getTanggalCheckin());
         dpCheckout.setValue(b.getTanggalCheckOut());
         txtJumlahTamu.setText(String.valueOf(b.getJumlahTamu()));
-        txtGrandHarga.setText(String.valueOf(b.getGrandHarga()));
+
+        if (b.getGrandHarga() != null) {
+            txtGrandHarga.setText(RUPIAH_FORMAT.format(b.getGrandHarga()));
+        } else {
+            txtGrandHarga.clear();
+        }
+
         cbStatus.setValue(b.getStatusBooking());
 
-        // Nonaktifkan field yang tidak boleh diubah saat mode ubah
         cbPenyewa.setDisable(true);
         cbStatus.setDisable(false);
 
@@ -365,8 +488,9 @@ public class Booking implements Initializable {
     }
 
     private void selectComboByName(ComboBox<String> combo, String nama) {
+        if (nama == null) return;
         for (String item : combo.getItems()) {
-            if (item.endsWith(" - " + nama)) {
+            if (item != null && item.endsWith(" - " + nama)) {
                 combo.setValue(item);
                 return;
             }
@@ -375,7 +499,8 @@ public class Booking implements Initializable {
 
     private String getIdFromCombo(String comboValue) {
         if (comboValue == null) return null;
-        return comboValue.split(" - ")[0];
+        String[] parts = comboValue.split(" - ");
+        return parts.length > 0 ? parts[0] : null;
     }
 
     private void setClose() {
@@ -390,7 +515,7 @@ public class Booking implements Initializable {
         dpCheckin.setValue(null);
         dpCheckout.setValue(null);
         cbPenyewa.setDisable(false);
-        hargaVillaTerpilih = 0;
+        villaTerpilih = null;
         tableBooking.getSelectionModel().clearSelection();
 
         btnSimpan.setDisable(false);
