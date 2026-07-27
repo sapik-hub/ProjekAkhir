@@ -193,9 +193,9 @@ public class CrudKategoriVilla implements Initializable {
         generateIdVilla();
     }
 
-    // ===== VALIDASI =====
+    // ===== VALIDASI (SUDAH DIPERBAIKI) =====
     // - Nama Kategori : wajib diisi, tidak boleh mengandung angka
-    // - Deskripsi     : opsional, kalau diisi tidak boleh mengandung angka
+    // - Deskripsi     : opsional, BISA diisi dengan angka (sudah dihapus validasi angka)
     private boolean validasi() {
         if (txtNamaKategori.getText().trim().isEmpty()) {
             notif(NotifUtil.Type.WARNING, "Nama kategori wajib diisi!");
@@ -203,7 +203,6 @@ public class CrudKategoriVilla implements Initializable {
         }
 
         String nama = txtNamaKategori.getText().trim();
-        String deskripsi = txtDeskripsi.getText().trim();
 
         // Nama Kategori: tidak boleh mengandung angka
         if (!nama.matches("^[^0-9]+$")) {
@@ -211,11 +210,9 @@ public class CrudKategoriVilla implements Initializable {
             return false;
         }
 
-        // Deskripsi: kalau diisi, tidak boleh mengandung angka
-        if (!deskripsi.isEmpty() && !deskripsi.matches("^[^0-9]+$")) {
-            notif(NotifUtil.Type.WARNING, "Deskripsi tidak boleh mengandung angka!");
-            return false;
-        }
+        // ✅ PERBAIKAN: Deskripsi BOLEH diisi angka, tidak divalidasi lagi
+        // Deskripsi sekarang bisa diisi apapun (huruf, angka, tanda baca, dll)
+        // Tidak ada pengecekan lagi untuk Deskripsi
 
         return true;
     }

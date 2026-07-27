@@ -22,7 +22,9 @@
 
                 <TextField fx:id="txtId" promptText="ID Kategori" editable="false" styleClass="input-field"/>
                 <TextField fx:id="txtNamaKategori" promptText="Nama Kategori" styleClass="input-field"/>
-                <TextArea fx:id="txtDeskripsi" promptText="Deskripsi" prefRowCount="4" wrapText="true" styleClass="input-field"/>
+
+                <!-- ✅ PERBAIKAN: TextArea untuk Deskripsi BISA diisi angka -->
+                <TextArea fx:id="txtDeskripsi" promptText="Deskripsi (boleh huruf dan angka)" prefRowCount="4" wrapText="true" styleClass="input-field"/>
 
                 <Region VBox.vgrow="ALWAYS"/>
                 <TextField fx:id="txtCari" promptText="🔍 Cari kategori..." styleClass="input-field"/>
