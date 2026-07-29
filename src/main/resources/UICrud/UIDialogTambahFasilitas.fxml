@@ -6,8 +6,9 @@
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="ProjekAstra.Controller.Master.DialogTambahFasilitas"
-      spacing="12" styleClass="bg-soft, card"
-      stylesheets="@../css/villa-theme.css">
+      styleClass="bg-soft"
+      stylesheets="@../css/villa-theme.css"
+      spacing="15" prefWidth="400">
 
     <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
 
@@ -15,17 +16,12 @@
         <font><Font name="System Bold" size="16"/></font>
     </Label>
 
-    <Label text="Pilih fasilitas yang ingin ditambahkan:" styleClass="label-regular"/>
     <ComboBox fx:id="cbFasilitas" promptText="Pilih Fasilitas" maxWidth="Infinity" styleClass="input-field"/>
-
-    <Label text="Jumlah fasilitas:" styleClass="label-regular"/>
-    <TextField fx:id="txtQty" promptText="Qty" styleClass="input-field"/>
-
-    <Region prefHeight="8"/>
+    <TextField fx:id="txtQty" promptText="Jumlah" styleClass="input-field"/>
 
     <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="Batal" onAction="#handleBatal" styleClass="btn-neutral" prefWidth="90"/>
-        <Button fx:id="btnSimpanFasilitas" text="Simpan" onAction="#handleSimpan" styleClass="btn-primary" prefWidth="90"/>
+        <Button fx:id="btnBatal" text="Batal" onAction="#handleBatal" styleClass="btn-neutral" prefWidth="100"/>
+        <Button fx:id="btnSimpanFasilitas" text="Simpan" onAction="#handleSimpan" styleClass="btn-primary" prefWidth="100"/>
     </HBox>
 
 </VBox>

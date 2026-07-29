@@ -3,8 +3,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
-
 <?import javafx.scene.image.ImageView?>
+
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="ProjekAstra.Controller.Master.CrudVilla"
             styleClass="bg-soft"
@@ -14,6 +14,7 @@
         <HBox spacing="15">
             <padding><Insets top="0" bottom="15" left="0" right="0"/></padding>
 
+            <!-- Panel Kiri: Form Villa -->
             <VBox spacing="12" prefWidth="280" styleClass="card">
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
 
@@ -29,38 +30,49 @@
                 <TextField fx:id="txtHargaWeekend" promptText="Harga Weekend / Malam" styleClass="input-field"/>
                 <TextField fx:id="txtAlamat" promptText="Alamat Villa" styleClass="input-field"/>
                 <ComboBox fx:id="cbStatus" promptText="Status" maxWidth="Infinity" styleClass="input-field"/>
+
                 <Label text="Foto Villa" styleClass="brand-title">
                     <font><Font name="System Bold" size="13"/></font>
                 </Label>
-                <ImageView fx:id="imgPreview" fitWidth="240" fitHeight="150" preserveRatio="false"/>
+
+                <ImageView fx:id="imgPreview" fitWidth="240" fitHeight="150" preserveRatio="true"/>
+
                 <Button fx:id="btnPilihFoto" text="Pilih Foto..." onAction="#handlePilihFoto" styleClass="btn-neutral" maxWidth="Infinity"/>
+
+                <!-- TOMBOL TAMBAH FASILITAS DIPINDAH KE SINI -->
+                <Button fx:id="btnTambahFasilitas" text="+ Tambah Fasilitas" onAction="#handleTambahFasilitas"
+                        styleClass="btn-primary" maxWidth="Infinity"/>
+
                 <Region VBox.vgrow="ALWAYS"/>
                 <TextField fx:id="txtCari" promptText="🔍 Cari villa..." styleClass="input-field"/>
             </VBox>
 
-            <!-- >>> FASILITAS: panel buat lihat & buka dialog tambah fasilitas villa aktif -->
-            <VBox spacing="10" prefWidth="260" styleClass="card">
+            <!-- Panel Tengah: Daftar Fasilitas Villa -->
+            <VBox spacing="10" prefWidth="300" styleClass="card">
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
 
                 <Label text="Fasilitas Villa" styleClass="brand-title">
                     <font><Font name="System Bold" size="15"/></font>
                 </Label>
 
-                <Button fx:id="btnBukaDialogFasilitas" text="+ Tambah Fasilitas" onAction="#handleBukaDialogFasilitas"
-                        styleClass="btn-primary" maxWidth="Infinity"/>
+                <Label text="Daftar fasilitas yang tersedia di villa ini" style="-fx-font-size: 11px; -fx-text-fill: #888888;"/>
 
-                <TableView fx:id="tableFasilitasVilla" VBox.vgrow="ALWAYS">
+                <TableView fx:id="tableFasilitasVilla" VBox.vgrow="ALWAYS" prefHeight="200">
                     <columns>
-                        <TableColumn fx:id="colFasNama" text="Fasilitas" prefWidth="110"/>
-                        <TableColumn fx:id="colFasQty" text="Qty" prefWidth="45"/>
-                        <TableColumn fx:id="colFasDeskripsi" text="Deskripsi" prefWidth="90"/>
+                        <TableColumn fx:id="colFasNama" text="Fasilitas" prefWidth="130"/>
+                        <TableColumn fx:id="colFasQty" text="Qty" prefWidth="55"/>
+                        <TableColumn fx:id="colFasDeskripsi" text="Deskripsi" prefWidth="100"/>
                     </columns>
+                    <placeholder>
+                        <Label text="Tidak ada fasilitas" style="-fx-text-fill: #999999; -fx-font-style: italic;"/>
+                    </placeholder>
                 </TableView>
 
                 <Button fx:id="btnHapusFasilitas" text="Hapus dari Villa" onAction="#handleHapusFasilitas"
                         styleClass="btn-danger" maxWidth="Infinity"/>
             </VBox>
 
+            <!-- Panel Kanan: Table Villa -->
             <VBox HBox.hgrow="ALWAYS" styleClass="card">
                 <padding><Insets top="15" bottom="15" left="15" right="15"/></padding>
 

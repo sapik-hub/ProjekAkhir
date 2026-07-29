@@ -7,7 +7,7 @@ public class Tampilan {
 
     @FXML
     private void handleKaryawan() {
-        MainApp.switchScene("/UILogin/UILoginKaryawan.fxml");
+        MainApp.switchScene("/UILogin/UIloginKaryawan.fxml");
     }
 
     @FXML

@@ -111,6 +111,7 @@ public class DashboardPenyewa {
         cbMetodePembayaran.getItems().setAll("Cash", "Transfer Bank", "QRIS");
     }
 
+    //database sudah melakukan join antar table villa dan kategori villa
     private void muatDaftarVilla() {
         daftarVilla.clear();
         Koneksi k = new Koneksi();
@@ -299,6 +300,10 @@ public class DashboardPenyewa {
     // METHOD LAINNYA (TETAP SAMA)
     // ===========================================================
 
+    // ===========================================================
+    // PERBAIKAN: handleCari() sekarang cari berdasarkan Nama Villa
+    // DAN Alamat Villa (selain kapasitas)
+    // ===========================================================
     @FXML
     private void handleCari() {
         String kw = txtCari.getText() == null ? "" : txtCari.getText().trim().toLowerCase();
@@ -308,9 +313,15 @@ public class DashboardPenyewa {
         }
         List<Villa> hasil = new ArrayList<>();
         for (Villa v : daftarVilla) {
-            boolean cocokNama = v.getNamaVilla().toLowerCase().contains(kw);
+            boolean cocokNama = v.getNamaVilla() != null
+                    && v.getNamaVilla().toLowerCase().contains(kw);
+            boolean cocokAlamat = v.getAlamatVilla() != null
+                    && v.getAlamatVilla().toLowerCase().contains(kw);
             boolean cocokKapasitas = String.valueOf(v.getKapasitas()).equals(kw);
-            if (cocokNama || cocokKapasitas) hasil.add(v);
+
+            if (cocokNama || cocokAlamat || cocokKapasitas) {
+                hasil.add(v);
+            }
         }
         renderBubble(hasil);
     }

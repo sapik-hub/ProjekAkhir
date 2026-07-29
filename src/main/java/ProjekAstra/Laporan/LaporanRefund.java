@@ -32,6 +32,7 @@ public class LaporanRefund implements Initializable {
         tampilkanLaporan();
     }
 
+    //nampilin laporan jasper dalam progam
     private void tampilkanLaporan() {
         Koneksi k = new Koneksi();
         try {

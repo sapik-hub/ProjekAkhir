@@ -23,9 +23,6 @@
             <!-- ===== DATA MASTER ===== -->
             <Label text="📋 DATA MASTER" style="-fx-text-fill: #9FA8DA; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 10 0 5 10;"/>
 
-            <Button fx:id="btnKaryawan" text="👤 Karyawan" onAction="#handleKaryawan"
-                    prefWidth="190" prefHeight="40" alignment="CENTER_LEFT"
-                    style="-fx-background-color: white; -fx-text-fill: #1565C0; -fx-background-radius: 8; -fx-font-weight: bold; -fx-cursor: hand;"/>
 
             <Region prefHeight="5"/>
 

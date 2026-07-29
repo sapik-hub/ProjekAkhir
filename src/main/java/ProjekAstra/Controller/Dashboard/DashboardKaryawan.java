@@ -18,9 +18,6 @@ public class DashboardKaryawan {
     @FXML
     private Label lblJudul;
 
-    // ===== BUTTON MENU =====
-    @FXML
-    private Button btnKaryawan;      // <-- GANTI: btnPemilik -> btnKaryawan
 
     @FXML
     private Button btnPenyewa;
@@ -43,21 +40,13 @@ public class DashboardKaryawan {
     @FXML
     public void initialize() {
         // Default tampilan pertama = Karyawan
-        handleKaryawan();
+        handlePenyewa();
     }
 
     // ===========================================================
     // HANDLE MENU
     // ===========================================================
 
-    @FXML
-    private void handleKaryawan() {
-        loadContent(
-                "/UICrud/UICrudKaryawan.fxml",
-                "Data Karyawan"
-        );
-        setActiveButton(btnKaryawan);
-    }
 
     @FXML
     private void handlePenyewa() {
@@ -114,17 +103,13 @@ public class DashboardKaryawan {
         setActiveButton(btnTransaksiRefund);
     }
 
-    // ===========================================================
     // LOGOUT
-    // ===========================================================
     @FXML
     private void handleLogout() {
         MainApp.switchScene("/UIMainView/UITampilan.fxml");
     }
 
-    // ===========================================================
     // UTILITY
-    // ===========================================================
     private void loadContent(String fxmlPath, String judul) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
@@ -153,7 +138,6 @@ public class DashboardKaryawan {
                         "-fx-font-weight: bold;" +
                         "-fx-cursor: hand;";
 
-        btnKaryawan.setStyle(btnKaryawan == active ? aktif : nonAktif);
         btnPenyewa.setStyle(btnPenyewa == active ? aktif : nonAktif);
         btnVilla.setStyle(btnVilla == active ? aktif : nonAktif);
         btnKategori.setStyle(btnKategori == active ? aktif : nonAktif);

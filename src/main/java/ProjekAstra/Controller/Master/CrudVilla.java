@@ -6,6 +6,7 @@ import ProjekAstra.Model.Villa;
 import ProjekAstra.Util.ConfirmUtil;
 import ProjekAstra.Util.FileUtil;
 import ProjekAstra.Util.NotifUtil;
+import ProjekAstra.Util.PopupUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -55,7 +56,8 @@ public class CrudVilla implements Initializable {
     @FXML private TableColumn<Villa, BigDecimal> colHargaWeekday, colHargaWeekend;
 
     // FASILITAS
-    @FXML private Button btnBukaDialogFasilitas, btnHapusFasilitas;
+    @FXML private Button btnTambahFasilitas; // Ganti dari btnBukaDialogFasilitas
+    @FXML private Button btnHapusFasilitas;
     @FXML private TableView<DetailFasilitas> tableFasilitasVilla;
     @FXML private TableColumn<DetailFasilitas, String> colFasNama, colFasDeskripsi;
     @FXML private TableColumn<DetailFasilitas, Integer> colFasQty;
@@ -128,6 +130,7 @@ public class CrudVilla implements Initializable {
         });
     }
 
+    //hubungan antara crud master kategori dengan crud villa
     private void loadComboKategori() {
         cbKategori.getItems().clear();
         Koneksi k = new Koneksi();
@@ -263,7 +266,6 @@ public class CrudVilla implements Initializable {
 
         Koneksi k = new Koneksi();
         try {
-            // sp_InsertVilla hanya 7 parameter (HargaWeekend otomatis dihitung di SP)
             CallableStatement cs = k.conn.prepareCall("{call sp_InsertVilla(?, ?, ?, ?, ?, ?, ?)}");
 
             cs.setString(1, getIdFromCombo(cbKategori.getValue()));
@@ -317,7 +319,6 @@ public class CrudVilla implements Initializable {
 
         Koneksi k = new Koneksi();
         try {
-            // sp_UpdateVilla ada 8 parameter
             CallableStatement cs = k.conn.prepareCall("{call sp_UpdateVilla(?, ?, ?, ?, ?, ?, ?, ?)}");
 
             cs.setString(1, txtId.getText());
@@ -389,31 +390,39 @@ public class CrudVilla implements Initializable {
     }
 
     // ===========================================================
-    // FASILITAS
+    // FASILITAS - METHOD BARU UNTUK TAMBAH FASILITAS
     // ===========================================================
     @FXML
-    private void handleBukaDialogFasilitas() {
+    private void handleTambahFasilitas() {
         if (txtId.getText().isEmpty()) {
             notif(NotifUtil.Type.WARNING, "Simpan atau pilih villa dulu sebelum menambah fasilitas!");
             return;
         }
         try {
+            // Load FXML dialog
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/UICrud/UIDialogTambahFasilitas.fxml"));
             Parent root = loader.load();
 
+            // Get controller dan set ID Villa
             DialogTambahFasilitas controller = loader.getController();
             controller.setIdVilla(txtId.getText());
 
+            // Tampilkan sebagai popup
+            Stage currentStage = (Stage) txtNamaVilla.getScene().getWindow();
             Stage dialogStage = new Stage();
+            dialogStage.initOwner(currentStage);
+            dialogStage.initModality(Modality.WINDOW_MODAL);
             dialogStage.setTitle("Tambah Fasilitas Villa");
-            dialogStage.initModality(Modality.APPLICATION_MODAL);
             dialogStage.setScene(new Scene(root));
             dialogStage.setResizable(false);
             dialogStage.showAndWait();
 
+            // Cek apakah berhasil menambah fasilitas
             if (controller.isBerhasilDitambahkan()) {
                 loadFasilitasVilla(txtId.getText());
+                NotifUtil.show(txtNamaVilla, NotifUtil.Type.SUCCESS, "Fasilitas berhasil ditambahkan!");
             }
+
         } catch (Exception e) {
             e.printStackTrace();
             notif(NotifUtil.Type.ERROR, "Gagal membuka form fasilitas: " + e.getMessage());
@@ -490,7 +499,7 @@ public class CrudVilla implements Initializable {
     }
 
     private void setFasilitasPanelEnabled(boolean enabled) {
-        btnBukaDialogFasilitas.setDisable(!enabled);
+        btnTambahFasilitas.setDisable(!enabled);
         btnHapusFasilitas.setDisable(!enabled);
         tableFasilitasVilla.setDisable(!enabled);
     }

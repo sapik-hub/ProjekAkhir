@@ -1,9 +1,9 @@
 package ProjekAstra.Controller.Master;
 
 import ProjekAstra.Koneksi.Koneksi;
-import ProjekAstra.Model.DetailFasilitas;
 import ProjekAstra.Model.Fasilitas;
 import ProjekAstra.Util.NotifUtil;
+import ProjekAstra.Util.PopupUtil; // Import PopupUtil
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -23,6 +23,7 @@ public class DialogTambahFasilitas implements Initializable {
     @FXML private ComboBox<Fasilitas> cbFasilitas;
     @FXML private TextField txtQty;
     @FXML private Button btnSimpanFasilitas;
+    @FXML private Button btnBatal;
 
     private String idVilla;
     private boolean berhasilDitambahkan = false;
@@ -30,6 +31,9 @@ public class DialogTambahFasilitas implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         loadComboFasilitas();
+
+        // Set listener untuk auto-close dengan escape key atau enter
+        txtQty.setOnAction(e -> handleSimpan());
     }
 
     public void setIdVilla(String idVilla) {
@@ -56,6 +60,20 @@ public class DialogTambahFasilitas implements Initializable {
                 ));
             }
             cbFasilitas.setItems(listFasilitas);
+
+            // Gunakan display text yang lebih informatif
+            cbFasilitas.setConverter(new javafx.util.StringConverter<Fasilitas>() {
+                @Override
+                public String toString(Fasilitas fasilitas) {
+                    return fasilitas != null ? fasilitas.getNamaFasilitas() : "";
+                }
+
+                @Override
+                public Fasilitas fromString(String string) {
+                    return null;
+                }
+            });
+
         } catch (Exception e) {
             notif(NotifUtil.Type.ERROR, "Gagal memuat data fasilitas: " + e.getMessage());
         } finally {
@@ -88,7 +106,7 @@ public class DialogTambahFasilitas implements Initializable {
             NotifUtil.show(txtQty, NotifUtil.Type.SUCCESS, "Fasilitas berhasil ditambahkan!", 1.5, this::tutupDialog);
         } catch (Exception e) {
             String errorMsg = e.getMessage();
-            if (errorMsg.contains("Fasilitas ini sudah ditambahkan")) {
+            if (errorMsg != null && errorMsg.contains("Fasilitas ini sudah ditambahkan")) {
                 notif(NotifUtil.Type.WARNING, "Fasilitas ini sudah ada di villa ini!");
             } else {
                 notif(NotifUtil.Type.ERROR, "Gagal menambah fasilitas: " + errorMsg);
@@ -105,8 +123,11 @@ public class DialogTambahFasilitas implements Initializable {
     }
 
     private void tutupDialog() {
+        // Tutup menggunakan PopupUtil jika ada, atau gunakan stage
         Stage stage = (Stage) btnSimpanFasilitas.getScene().getWindow();
-        stage.close();
+        if (stage != null) {
+            stage.close();
+        }
     }
 
     private void notif(NotifUtil.Type type, String msg) {

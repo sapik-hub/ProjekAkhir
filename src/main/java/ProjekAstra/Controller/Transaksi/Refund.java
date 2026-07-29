@@ -25,26 +25,33 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 
+// INTERFACE: implements Initializable (bawaan JavaFX)
+// Mewajibkan kelas ini punya method initialize() yang otomatis
+// dipanggil JavaFX begitu file Refund.fxml selesai dimuat.
 public class Refund implements Initializable {
 
+    // @FXML menghubungkan variabel Java ini ke komponen di FXML, berdasarkan fx:id yang sama persis.
     @FXML private TextField txtId, txtPenyewa, txtVilla, txtGrandHarga, txtDiprosesOleh, txtCari;
     @FXML private TextArea txtAlasan, txtDeskripsi;
     @FXML private ComboBox<String> cbBooking, cbStatus;
     @FXML private DatePicker dpTglPengajuan, dpTglRefund;
     @FXML private Button btnSimpan, btnUbah, btnHapus, btnCetak;
 
+    //  tabel ini khusus menampung objek bertipe TransaksiRefund saja.
     @FXML private TableView<TransaksiRefund> tableRefund;
     @FXML private TableColumn<TransaksiRefund, String> colId, colBooking, colPenyewa, colVilla,
             colKaryawan, colAlasan, colStatus;
     @FXML private TableColumn<TransaksiRefund, LocalDate> colTglPengajuan, colTglRefund;
     @FXML private TableColumn<TransaksiRefund, BigDecimal> colJumlah;
 
+    // ObservableList = list khusus JavaFX, otomatis update tampilan
     private final ObservableList<TransaksiRefund> listRefund = FXCollections.observableArrayList();
 
-    // Cache info booking
     private static class BookingInfo {
         String namaPenyewa, namaVilla, statusBooking;
         BigDecimal grandHarga;
+
+        // Constructor
         BookingInfo(String namaPenyewa, String namaVilla, BigDecimal grandHarga, String statusBooking) {
             this.namaPenyewa = namaPenyewa != null ? namaPenyewa : "Tidak Diketahui";
             this.namaVilla = namaVilla != null ? namaVilla : "Tidak Diketahui";
@@ -61,12 +68,13 @@ public class Refund implements Initializable {
         RUPIAH_FORMAT = new DecimalFormat("#,##0", symbols);
     }
 
+    // OVERRIDE dari interface Initializable, dipanggil otomatis saat FXML dimuat.
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         setupTable();
         setupStatusCombo();
         loadComboBooking();
-        loadTable();
+        loadTable();            //ambil semua data refund
         setClose();
 
         tableRefund.setOnMouseClicked(e -> {
@@ -81,16 +89,19 @@ public class Refund implements Initializable {
             if (newVal != null) {
                 LocalDate today = LocalDate.now();
                 dpTglPengajuan.setValue(today);
-                dpTglRefund.setValue(today.plusDays(1));
+                dpTglRefund.setValue(today.plusDays(1));   // tanggal refund = besok dari pengajuan
             }
         });
 
+        // LISTENER: kalau tanggal pengajuan diubah manual, tanggal refund
+        // otomatis mengikuti (H+1 dari tanggal pengajuan).
         dpTglPengajuan.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 dpTglRefund.setValue(newVal.plusDays(1));
             }
         });
 
+        // LISTENER: pencarian real-time, setiap huruf yang diketik langsung filter tabel.
         txtCari.textProperty().addListener((obs, oldVal, newVal) -> cariRefund(newVal));
     }
 
@@ -118,6 +129,7 @@ public class Refund implements Initializable {
             }
         });
 
+        // untuk kolom Status: (kuning=Pending, hijau=Disetujui, merah=Ditolak, biru=Selesai).
         colStatus.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String status, boolean empty) {
@@ -127,6 +139,7 @@ public class Refund implements Initializable {
                     setStyle("");
                 } else {
                     setText(status);
+                    // switch-case untuk menentukan warna sesuai status
                     switch (status) {
                         case "Pending":
                             setStyle("-fx-text-fill: #f59e0b; -fx-font-weight: bold;");
@@ -148,6 +161,7 @@ public class Refund implements Initializable {
         });
     }
 
+    // Isi pilihan status yang bisa dipilih user (dropdown)
     private void setupStatusCombo() {
         cbStatus.setItems(FXCollections.observableArrayList(
                 "Pending", "Disetujui", "Ditolak", "Selesai"
@@ -155,7 +169,7 @@ public class Refund implements Initializable {
         cbStatus.setDisable(true);
     }
 
-    // ✅ FIX: Hanya tampilkan booking yang eligible (tidak termasuk Dibatalkan)
+    // ===== ISI DROPDOWN BOOKING =====
     private void loadComboBooking() {
         cbBooking.getItems().clear();
         mapBookingInfo.clear();
@@ -170,10 +184,11 @@ public class Refund implements Initializable {
                 BigDecimal grandHarga = rs.getBigDecimal("Grand_Harga");
                 String statusBooking = rs.getString("Status_Booking");
 
+                // Simpan SEMUA data booking ke cache (dipakai nanti di tampilkanInfoBooking)
                 mapBookingInfo.put(idBooking, new BookingInfo(namaPenyewa, namaVilla, grandHarga, statusBooking));
 
-                // ✅ HANYA tampilkan booking yang ELIGIBLE untuk refund
-                // Booking Dibatalkan dan Pending TIDAK ditampilkan
+                // ATURAN ELIGIBILITAS: booking berstatus "Dibatalkan" atau "Pending"
+                // TIDAK ditampilkan di dropdown, hanya 4 status ini yang boleh direfund.
                 if (statusBooking != null &&
                         (statusBooking.equals("Dikonfirmasi") ||
                                 statusBooking.equals("Check In") ||
@@ -191,7 +206,6 @@ public class Refund implements Initializable {
         }
     }
 
-    // ✅ METHOD: Cek apakah booking eligible untuk refund
     private boolean cekBookingEligibleForRefund(String idBooking) {
         if (idBooking == null || idBooking.isEmpty()) return false;
 
@@ -206,7 +220,6 @@ public class Refund implements Initializable {
                 String status = rs.getString("Status_Booking");
                 System.out.println("DEBUG - Cek Status Booking: " + idBooking + " = " + status);
 
-                // ✅ Hanya status ini yang boleh direfund
                 return status != null &&
                         (status.equals("Dikonfirmasi") ||
                                 status.equals("Check In") ||
@@ -221,6 +234,7 @@ public class Refund implements Initializable {
         return false;
     }
 
+    // Ambil info booking (penyewa, villa, harga) lalu tampilkan ke form.
     private void tampilkanInfoBooking(String comboValue) {
         String idBooking = getIdFromCombo(comboValue);
         BookingInfo info = idBooking != null ? mapBookingInfo.get(idBooking) : null;
@@ -240,6 +254,7 @@ public class Refund implements Initializable {
         }
     }
 
+    // ===== AMBIL SEMUA DATA REFUND DARI DATABASE =====
     private void loadTable() {
         listRefund.clear();
         Koneksi k = new Koneksi();
@@ -248,9 +263,11 @@ public class Refund implements Initializable {
             CallableStatement cs = k.conn.prepareCall("{call sp_GetAllRefund}");
             ResultSet rs = cs.executeQuery();
 
+            // perhitungan
             int rowCount = 0;
             while (rs.next()) {
                 rowCount++;
+
                 try {
                     String idRefund = rs.getString("Id_TrxRefund");
                     String idBooking = rs.getString("Id_TrxBooking");
@@ -288,6 +305,7 @@ public class Refund implements Initializable {
         }
     }
 
+    // Filter tabel dari listRefund yang sudah dimuat (tanpa query ulang ke database)
     private void cariRefund(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             tableRefund.setItems(listRefund);
@@ -298,6 +316,7 @@ public class Refund implements Initializable {
         for (TransaksiRefund r : listRefund) {
             if (r == null) continue;
 
+            // Guard clause null-safety sebelum toLowerCase(), mencegah NullPointerException
             String idRefund = r.getIdTrxRefund() != null ? r.getIdTrxRefund().toLowerCase() : "";
             String idBooking = r.getIdTrxBooking() != null ? r.getIdTrxBooking().toLowerCase() : "";
             String namaPenyewa = r.getNamaPenyewa() != null ? r.getNamaPenyewa().toLowerCase() : "";
@@ -311,9 +330,10 @@ public class Refund implements Initializable {
         tableRefund.setItems(hasil);
     }
 
+    // ===== SIMPAN PENGAJUAN REFUND BARU =====
     @FXML
     private void handleSimpan() {
-        if (!validasiInsert()) return;
+        if (!validasiInsert()) return;   // validasi form dulu
 
         Koneksi k = new Koneksi();
         try {
@@ -323,15 +343,16 @@ public class Refund implements Initializable {
                 return;
             }
 
-            // ✅ VALIDASI: Cek apakah booking eligible untuk refund
+            // DOUBLE-CHECK eligibilitas booking sebelum benar-benar disimpan ke database
             if (!cekBookingEligibleForRefund(idBooking)) {
                 notif(NotifUtil.Type.WARNING, "Booking ini tidak bisa direfund! (Status: Dibatalkan atau tidak eligible)");
                 return;
             }
 
+            // sp_InsertRefund mengembalikan ID refund baru (executeQuery, bukan execute biasa)
             CallableStatement cs = k.conn.prepareCall("{call sp_InsertRefund(?, ?, ?, ?)}");
             cs.setString(1, idBooking);
-            cs.setString(2, Session.getIdKaryawan());
+            cs.setString(2, Session.getIdKaryawan());   // ambil dari Session -> siapa yang lagi login
             cs.setString(3, txtAlasan.getText().trim());
             cs.setString(4, txtDeskripsi.getText().trim());
             ResultSet rs = cs.executeQuery();
@@ -340,12 +361,13 @@ public class Refund implements Initializable {
             if (rs.next()) {
                 idBaru = rs.getString("Id_TrxRefund");
             }
+            // Variabel harus final/effectively final supaya bisa dipakai di dalam lambda di bawah
             final String idHasil = idBaru;
 
             NotifUtil.show(txtAlasan, NotifUtil.Type.SUCCESS, "Pengajuan refund berhasil dibuat!",
                     () -> {
                         loadTable();
-                        if (idHasil != null) selectRefundById(idHasil);
+                        if (idHasil != null) selectRefundById(idHasil);   // langsung tampilkan data baru
                         else setClose();
                     });
         } catch (Exception e) {
@@ -356,18 +378,20 @@ public class Refund implements Initializable {
         }
     }
 
+    // Cari objek refund di listRefund berdasarkan ID, lalu tampilkan ke form & sorot di tabel.
     private void selectRefundById(String idTrxRefund) {
         if (idTrxRefund == null) return;
         for (TransaksiRefund r : listRefund) {
             if (r != null && idTrxRefund.equals(r.getIdTrxRefund())) {
                 populateForm(r);
                 tableRefund.getSelectionModel().select(r);
-                tableRefund.scrollTo(r);
+                tableRefund.scrollTo(r);   // auto-scroll ke baris tersebut
                 break;
             }
         }
     }
 
+    // ===== UBAH DATA REFUND =====
     @FXML
     private void handleUbah() {
         if (txtId.getText() == null || txtId.getText().isEmpty()) {
@@ -379,6 +403,7 @@ public class Refund implements Initializable {
             return;
         }
 
+        // Minta konfirmasi dulu
         ConfirmUtil.show(txtAlasan,
                 "Simpan perubahan data refund " + txtId.getText() + "?",
                 this::prosesUbah);
@@ -387,12 +412,14 @@ public class Refund implements Initializable {
     private void prosesUbah() {
         Koneksi k = new Koneksi();
         try {
+            // Update data teks refund (alasan & deskripsi)
             CallableStatement cs = k.conn.prepareCall("{call sp_UpdateRefund(?, ?, ?)}");
             cs.setString(1, txtId.getText());
             cs.setString(2, txtAlasan.getText().trim());
             cs.setString(3, txtDeskripsi.getText().trim());
             cs.execute();
 
+            // Kalau status di ComboBox diisi, update juga statusnya (SP TERPISAH)
             String statusBaru = cbStatus.getValue();
             if (statusBaru != null && !statusBaru.isEmpty()) {
                 CallableStatement csStatus = k.conn.prepareCall("{call sp_UpdateStatusRefund(?, ?)}");
@@ -444,6 +471,8 @@ public class Refund implements Initializable {
         setClose();
     }
 
+    // ===== CETAK BUKTI REFUND =====
+    // Ambil data gabungan (booking + refund) lewat sp_CetakRefund,
     @FXML
     private void handleCetakRefund() {
         if (txtId.getText() == null || txtId.getText().isEmpty()) {
@@ -458,6 +487,7 @@ public class Refund implements Initializable {
             ResultSet rs = cs.executeQuery();
 
             if (rs.next()) {
+                // StringBuilder dipakai untuk menyusun teks bukti refund baris per baris
                 StringBuilder sb = new StringBuilder();
                 sb.append("=== BUKTI REFUND ===\n\n");
                 sb.append("ID Refund      : ").append(rs.getString("Id_TrxRefund") != null ? rs.getString("Id_TrxRefund") : "-").append("\n");
@@ -477,6 +507,8 @@ public class Refund implements Initializable {
                 sb.append("Tgl Refund     : ").append(rs.getDate("Tanggal_Refund") != null ? rs.getDate("Tanggal_Refund") : "-").append("\n");
                 sb.append("Status         : ").append(rs.getString("Status") != null ? rs.getString("Status") : "-").append("\n");
 
+                // Alert bawaan JavaFX dipakai sebagai jendela pop-up bukti refund,
+                // isinya diganti pakai TextArea supaya teksnya bisa di-scroll & rapi.
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Bukti Refund");
                 alert.setHeaderText("Bukti Refund - " + (rs.getString("Id_TrxRefund") != null ? rs.getString("Id_TrxRefund") : ""));
@@ -497,6 +529,7 @@ public class Refund implements Initializable {
         }
     }
 
+    // Mengisi form dari data yang dipilih di tabel (mode EDIT)
     private void populateForm(TransaksiRefund r) {
         if (r == null) {
             notif(NotifUtil.Type.WARNING, "Data refund tidak ditemukan!");
@@ -508,7 +541,7 @@ public class Refund implements Initializable {
 
             String idBooking = r.getIdTrxBooking();
             if (idBooking != null) {
-                // ✅ CEK: Jika booking sudah dibatalkan, tampilkan peringatan
+
                 if (!cekBookingEligibleForRefund(idBooking)) {
                     System.out.println("WARNING: Booking " + idBooking + " sudah tidak eligible untuk refund");
                 }
@@ -530,12 +563,15 @@ public class Refund implements Initializable {
             txtAlasan.setText(r.getAlasanRefund() != null ? r.getAlasanRefund() : "");
             txtDeskripsi.setText(r.getDeskripsi() != null ? r.getDeskripsi() : "");
 
+            // Mode EDIT: status boleh diubah sekarang
             cbStatus.setDisable(false);
             cbStatus.setValue(r.getStatus() != null ? r.getStatus() : "Pending");
 
             dpTglPengajuan.setValue(r.getTanggalPengajuan());
             dpTglRefund.setValue(r.getTanggalRefund());
 
+            // Booking TIDAK BOLEH diganti lagi setelah refund dibuat
+            // (satu refund selalu terikat ke satu booking yang sama)
             cbBooking.setDisable(true);
 
             btnSimpan.setDisable(true);
@@ -564,12 +600,15 @@ public class Refund implements Initializable {
         combo.setValue(target);
     }
 
+    // ComboBox menyimpan teks gabungan "ID - Nama", method ini memisahkan
+    // dan mengambil ID-nya saja (bagian sebelum " - ").
     private String getIdFromCombo(String comboValue) {
         if (comboValue == null || comboValue.isEmpty()) return null;
         String[] parts = comboValue.split(" - ");
         return parts.length > 0 ? parts[0] : null;
     }
 
+    // Mengosongkan form & kembali ke mode TAMBAH BARU
     private void setClose() {
         txtPenyewa.clear();
         txtVilla.clear();
@@ -578,9 +617,9 @@ public class Refund implements Initializable {
         txtDeskripsi.clear();
 
         cbBooking.setValue(null);
-        cbBooking.setDisable(false);
+        cbBooking.setDisable(false);   // boleh pilih booking baru lagi
 
-        cbStatus.setDisable(true);
+        cbStatus.setDisable(true);      // status dikunci sampai ada data yang dipilih
         cbStatus.setValue(null);
 
         LocalDate today = LocalDate.now();
@@ -589,6 +628,7 @@ public class Refund implements Initializable {
         dpTglPengajuan.setDisable(false);
         dpTglRefund.setDisable(false);
 
+        // Ambil nama karyawan yang sedang login dari Session (static class)
         String namaAktif = Session.getNamaKaryawan();
         txtDiprosesOleh.setText(namaAktif != null && !namaAktif.isEmpty() ? namaAktif : "⚠ Sesi tidak ditemukan");
 
@@ -598,9 +638,10 @@ public class Refund implements Initializable {
         btnUbah.setDisable(true);
         btnHapus.setDisable(true);
 
-        generateIdRefund();
+        generateIdRefund();   // siapkan ID baru untuk pengajuan berikutnya
     }
 
+    // Ambil ID refund berikutnya dari FUNCTION SQL di database (auto increment custom)
     private void generateIdRefund() {
         Koneksi k = new Koneksi();
         try {
@@ -618,6 +659,7 @@ public class Refund implements Initializable {
         }
     }
 
+    // ===== VALIDASI SEBELUM SIMPAN =====
     private boolean validasiInsert() {
         if (cbBooking.getValue() == null || cbBooking.getValue().isEmpty()) {
             notif(NotifUtil.Type.WARNING, "Silakan pilih booking terlebih dahulu!");
@@ -634,6 +676,8 @@ public class Refund implements Initializable {
             return false;
         }
 
+        // Validasi Session: pastikan ada karyawan yang login,
+        // karena Id_Karyawan wajib dikirim ke sp_InsertRefund.
         String idKaryawan = Session.getIdKaryawan();
         if (idKaryawan == null || idKaryawan.isEmpty()) {
             notif(NotifUtil.Type.ERROR, "Sesi karyawan tidak ditemukan! Silakan logout dan login ulang.");

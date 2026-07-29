@@ -19,10 +19,12 @@ import java.util.ResourceBundle;
 
 public class CrudKategoriVilla implements Initializable {
 
+    // @FXML menghubungkan variabel Java ini ke komponen di FXML berdasarkan fx:id yang sama persis.
     @FXML private TextField txtId, txtNamaKategori, txtCari;
     @FXML private TextArea txtDeskripsi;
     @FXML private Button btnSimpan, btnUbah, btnHapus;
 
+    // menampung objek bertipe KategoriVilla saja.
     @FXML private TableView<KategoriVilla> tableKategori;
     @FXML private TableColumn<KategoriVilla, String> colId, colNamaKategori, colDeskripsi;
 
@@ -34,11 +36,13 @@ public class CrudKategoriVilla implements Initializable {
         loadTable();
         setClose();
 
+        // klik baris tabel -> isi form
         tableKategori.setOnMouseClicked(e -> {
             KategoriVilla k = tableKategori.getSelectionModel().getSelectedItem();
             if (k != null) populateForm(k);
         });
 
+        // Listener: setiap teks di kolom cari berubah, langsung filter tabel
         txtCari.textProperty().addListener((obs, oldVal, newVal) -> cariKategori(newVal));
     }
 
@@ -48,6 +52,7 @@ public class CrudKategoriVilla implements Initializable {
         colDeskripsi.setCellValueFactory(new PropertyValueFactory<>("deskripsi"));
     }
 
+    // ===== AMBIL SEMUA DATA DARI DATABASE =====
     private void loadTable() {
         listKategori.clear();
 
@@ -88,7 +93,7 @@ public class CrudKategoriVilla implements Initializable {
 
     @FXML
     private void handleSimpan() {
-        if (!validasi()) return;
+        if (!validasi()) return;   // validasi dulu, kalau gagal langsung stop
 
         Koneksi k = new Koneksi();
         try {
@@ -109,6 +114,7 @@ public class CrudKategoriVilla implements Initializable {
         }
     }
 
+    // ===== UBAH DATA =====
     @FXML
     private void handleUbah() {
         if (txtId.getText().isEmpty()) {
@@ -171,16 +177,19 @@ public class CrudKategoriVilla implements Initializable {
         setClose();
     }
 
+    // Mengisi form dari data yang dipilih di tabel
     private void populateForm(KategoriVilla k) {
         txtId.setText(k.getIdKategori());
         txtNamaKategori.setText(k.getNamaKategori());
         txtDeskripsi.setText(k.getDeskripsi());
 
+        // Tombol Simpan dimatikan, Ubah & Hapus dinyalakan
         btnSimpan.setDisable(true);
         btnUbah.setDisable(false);
         btnHapus.setDisable(false);
     }
 
+    // Mengosongkan form & kembali ke mode TAMBAH BARU
     private void setClose() {
         txtId.clear();
         txtNamaKategori.clear();
@@ -190,12 +199,10 @@ public class CrudKategoriVilla implements Initializable {
         btnSimpan.setDisable(false);
         btnUbah.setDisable(true);
         btnHapus.setDisable(true);
-        generateIdVilla();
+        generateIdVilla();   // generate ID baru untuk data berikutnya
     }
 
-    // ===== VALIDASI (SUDAH DIPERBAIKI) =====
-    // - Nama Kategori : wajib diisi, tidak boleh mengandung angka
-    // - Deskripsi     : opsional, BISA diisi dengan angka (sudah dihapus validasi angka)
+    // ===== VALIDASI =====
     private boolean validasi() {
         if (txtNamaKategori.getText().trim().isEmpty()) {
             notif(NotifUtil.Type.WARNING, "Nama kategori wajib diisi!");
@@ -204,15 +211,10 @@ public class CrudKategoriVilla implements Initializable {
 
         String nama = txtNamaKategori.getText().trim();
 
-        // Nama Kategori: tidak boleh mengandung angka
         if (!nama.matches("^[^0-9]+$")) {
             notif(NotifUtil.Type.WARNING, "Nama Kategori tidak boleh mengandung angka!");
             return false;
         }
-
-        // ✅ PERBAIKAN: Deskripsi BOLEH diisi angka, tidak divalidasi lagi
-        // Deskripsi sekarang bisa diisi apapun (huruf, angka, tanda baca, dll)
-        // Tidak ada pengecekan lagi untuk Deskripsi
 
         return true;
     }
@@ -221,6 +223,7 @@ public class CrudKategoriVilla implements Initializable {
         NotifUtil.show(txtNamaKategori, type, msg);
     }
 
+    // Ambil ID kategori berikutnya dari FUNCTION SQL di database
     public void generateIdVilla() {
         Koneksi k = new Koneksi();
         try {
